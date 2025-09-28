@@ -12,13 +12,14 @@
 
 """Example: Using QAOA to solve a Vrp instance."""
 
+import numpy as np
+
 from cqlib_algorithm.problems.vrp import VRP
 from cqlib_algorithm.mappings.convert import vrp_to_qubo, qubo_to_ising
 from cqlib_algorithm.visualization.vrp_plot import plot_vrp
 from cqlib_algorithm.execution import LocalRunner, TianYanRunner
 from cqlib_algorithm.algorithms.qaoa import QAOASolver, QAOAConfig
 from cqlib_algorithm.optimizers.options import OptimizerOptions
-import numpy as np
 
 def main():
     # 1) Vrp instance
