@@ -45,16 +45,16 @@ def main():
 
     # 5) Select optimizer
     # SPSA
-    opt_cfg = OptimizerOptions(name="spsa", options={"maxiter": 10, "a": 0.2, "c": 0.2})
+    #opt_cfg = OptimizerOptions(name="spsa", options={"maxiter": 50, "a": 0.2, "c": 0.2})
     # COBYLA
-    #opt_cfg = OptimizerOptions(name="cobyla",options={"maxiter": 10,"rhobeg": 1.0,"rhoend": 1e-3})
+    opt_cfg = OptimizerOptions(name="cobyla",options={"maxiter": 10,"rhobeg": 1.0,"rhoend": 1e-3})
     # Nelder-Mead
-    #opt_cfg = OptimizerOptions(name="nelder_mead",options={"maxiter": 10,"initial_step": 0.05,"alpha": 1.0,"gamma": 2.0,"rho": 0.5,"sigma": 0.5,"ftol": 1e-6,"xtol": 1e-6})
+    #opt_cfg = OptimizerOptions(name="nelder_mead",options={"maxiter": 50,"initial_step": 0.05,"alpha": 1.0,"gamma": 2.0,"rho": 0.5,"sigma": 0.5,"ftol": 1e-6,"xtol": 1e-6})
 
     # 6) Solving with QAOA
     solver = QAOASolver(ising, 
                         runner=LocalRunner(), 
-                        qaoa_cfg=QAOAConfig(reps=2, mixer="x"), 
+                        qaoa_cfg=QAOAConfig(reps=3, mixer="x"), 
                         opt_cfg=opt_cfg)
 
     res = solver.run()
