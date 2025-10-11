@@ -47,7 +47,7 @@ def main():
     # SPSA
     #opt_cfg = OptimizerOptions(name="spsa", options={"maxiter": 50, "a": 0.2, "c": 0.2})
     # COBYLA
-    opt_cfg = OptimizerOptions(name="cobyla",options={"maxiter": 10,"rhobeg": 1.0,"rhoend": 1e-3})
+    opt_cfg = OptimizerOptions(name="cobyla",options={"maxiter": 50,"rhobeg": 1.0,"rhoend": 1e-3})
     # Nelder-Mead
     #opt_cfg = OptimizerOptions(name="nelder_mead",options={"maxiter": 50,"initial_step": 0.05,"alpha": 1.0,"gamma": 2.0,"rho": 0.5,"sigma": 0.5,"ftol": 1e-6,"xtol": 1e-6})
 
