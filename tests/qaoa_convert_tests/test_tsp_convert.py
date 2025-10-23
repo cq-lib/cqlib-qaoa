@@ -42,8 +42,8 @@ def main():
     print(ising)
 
     # 5) Build QAOA circuit
-    betas  = [1]
-    gammas = [1]
+    betas  = [0.2]
+    gammas = [0.8]
     reps = 1
     mixer_operator = "x"
     circ = build_qaoa_circuit(ising.n, ising.h, ising.J, reps, betas, gammas, mixer_operator, name="TSP_ansatz")

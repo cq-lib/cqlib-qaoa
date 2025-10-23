@@ -58,8 +58,8 @@ def maxcut_to_qubo(problem: MaxCut) -> QUBO:
             continue
         a, b = (i, j) if i < j else (j, i)
         w = float(w)
-        Q[a, b] += -2.0 * w
-        Q[b, a] += -2.0 * w
+        Q[a, b] += -1.0 * w
+        Q[b, a] += -1.0 * w
         deg[a] += w
         deg[b] += w
         total_w += w
@@ -107,8 +107,8 @@ def tsp_to_qubo(problem: TSP, A: float = 10000) -> QUBO:
         if u == v:
             Q[u, u] += coef
         else:
-            Q[u, v] += coef 
-            Q[v, u] += coef 
+            Q[u, v] += 0.5 * coef 
+            Q[v, u] += 0.5 * coef 
 
     # Constraint 1: each position has exactly one city => A_pen * (1 - sum_i x_{i,j})^2
     for j in range(n):
@@ -245,54 +245,32 @@ def vrp_to_qubo(vrp: VRP, A_assign: float = 10000, A_pos: float = 10000) -> QUBO
 
 # ------- QUBO → Ising -------
 def qubo_to_ising(qubo: QUBO, *, zero_tol: float = 1e-12) -> IsingHamiltonian:
-    """Convert a generic QUBO to an Ising Hamiltonian.
-
-    The conversion supports linear and quadratic terms. If ``qubo.sense == "max"``,
-    the objective is flipped to minimization before mapping, i.e., Q, c, offset
-    are multiplied by -1 so that the resulting Ising encodes a minimization task.
-
-    Args:
-        qubo: QUBO model with fields:
-            - ``Q``: (n × n) quadratic matrix
-            - ``c``: (n,) linear vector
-            - ``offset``: scalar constant
-            - optional ``sense``: "min" (default) or "max"
-        zero_tol: Numerical tolerance below which coefficients are dropped.
-
-    Returns:
-        IsingHamiltonian: ``(n, h, J, offset)`` where
-            - ``h``: dict ``{i: h_i}`` local fields
-            - ``J``: dict ``{(i, j): J_ij}`` couplings with i < j
-            - ``offset``: constant energy term
+    """Convert a QUBO to Ising.
     """
-    # Normalize objective direction
     sense = getattr(qubo, "sense", "min")
     sign = -1.0 if sense == "max" else 1.0
 
-    Q_eff = sign * qubo.Q
-    c_eff = sign * qubo.c
-    off_eff = sign * float(qubo.offset)
+    Q_eff = sign * np.asarray(qubo.Q, dtype=float)
+    c_eff = sign * np.asarray(qubo.c, dtype=float)
+    off_eff = sign * float(getattr(qubo, "offset", 0.0))
 
-    # Symmetrize and map
+    # Symmetrize
     Qs = 0.5 * (Q_eff + Q_eff.T)
     n = Qs.shape[0]
     one = np.ones(n)
 
-    J_full = Qs / 4.0
-    h_vec  = -0.25 * (Qs @ one) - 0.5 * c_eff
-    diag_Q = Qs.diagonal() if hasattr(Qs, "diagonal") else np.diag(Qs)
-    h_vec = np.asarray(h_vec).reshape(-1) - 0.25 * np.asarray(diag_Q).reshape(-1)
-
-    offset = 0.25 * 0.5 * float(one @ Qs @ one) + 0.5 * float(c_eff @ one) + off_eff
-    diag_sum = float(Qs.diagonal().sum()) if hasattr(Qs, "diagonal") else float(np.trace(Qs))
-    offset += 0.25 * 0.5 * diag_sum
-
-    J: Dict[Edge, float] = {}
-    for i in range(n):
-        offset += float(J_full[i, i]) 
-        for j in range(i + 1, n):
-            if abs(J_full[i, j]) > zero_tol:
-                J[(i, j)] = float(J_full[i, j])
-
+    # ====== Core mapping ======
+    h_vec = -0.5 * (Qs @ one + c_eff)
     h = {i: float(h_vec[i]) for i in range(n) if abs(h_vec[i]) > zero_tol}
+
+    offset = 0.25 * float(one @ (Qs @ one)) + 0.5 * float(c_eff @ one) + off_eff
+
+    J: Dict[tuple[int, int], float] = {}
+    for i in range(n):
+        offset += 0.25 * float(Qs[i, i]) 
+        for j in range(i + 1, n):
+            val = 0.5 * Qs[i, j]
+            if abs(val) > zero_tol:
+                J[(i, j)] = float(val)
+
     return IsingHamiltonian(n=n, h=h, J=J, offset=offset)

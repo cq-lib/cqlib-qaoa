@@ -50,27 +50,58 @@ class QUBO:
         """Return a string representation."""
         return self.to_string()
 
-    def to_string(self, precision: int = 3) -> str:
-        """Format the QUBO as aligned numeric arrays.
+    def to_string(self, precision: int = 12, zero_tol: float = 1e-12) -> str:
+        """Print as a single-line objective docplex pretty output."""
+        terms = []
 
-        Args:
-            precision: Number of decimal places for printing coefficients.
+        # Quadratic terms (print each pair once, i<j)
+        for i in range(self.n):
+            for j in range(i + 1, self.n):
+                coef = self.Q[i, j] + self.Q[j, i]  # equals 2*Q[i,j] if Q is symmetric
+                if abs(coef) > zero_tol:
+                    terms.append((coef, f"x_{i}*x_{j}"))
 
-        Returns:
-            str: Multi-line human-readable representation of ``Q``, ``c`` and ``offset``.
-        """
-        rows = []
-        for row in self.Q:
-            row_str = ", ".join(f"{x:.{precision}f}" for x in row)
-            rows.append(f"[{row_str}]")
-        Q_str = "[\n " + "\n ".join(rows) + "\n]"
+        # Linear terms: diagonal contributes as x_i (since x_i^2 = x_i), plus c[i]
+        for i in range(self.n):
+            lin_coef = self.Q[i, i] + self.c[i]
+            if abs(lin_coef) > zero_tol:
+                terms.append((lin_coef, f"x_{i}"))
 
-        c_str = "[" + ", ".join(f"{x:.{precision}f}" for x in self.c) + "]"
-        off_str = f"{self.offset:.{precision}f}"
+        # Constant term
+        const = float(self.offset)
+
+        # Build expression string with signs
+        def fmt_coef(v: float) -> str:
+            # avoid printing "-0.000..."
+            v = 0.0 if abs(v) <= zero_tol else v
+            # integer-like?
+            if abs(v - round(v)) <= 10**(-precision):
+                return str(int(round(v)))
+            return f"{v:.{max(0, min(precision, 12))}g}"
+
+        # Sort terms: quadratics first, then linear (purely cosmetic)
+        quad = [(c, s) for (c, s) in terms if "*x_" in s]
+        lin  = [(c, s) for (c, s) in terms if "*x_" not in s]
+        ordered = quad + lin
+
+        expr_parts = []
+        for k, (coef, sym) in enumerate(ordered):
+            sign = " + " if coef >= 0 else " - "
+            mag = fmt_coef(abs(coef))
+            piece = ("" if k == 0 and coef >= 0 else sign) + f"{mag}*{sym}"
+            expr_parts.append(piece)
+
+        # Constant
+        if abs(const) > zero_tol or not expr_parts:
+            sign = " + " if const >= 0 else " - "
+            mag = fmt_coef(abs(const))
+            piece = ("" if not expr_parts and const >= 0 else sign) + mag
+            expr_parts.append(piece)
+
+        direction = "Maximize" if self.sense == "max" else "Minimize"
+        expr = "".join(expr_parts).lstrip()
 
         return (
             f"========== [ QUBO ] ==========\n"
-            f"Q = {Q_str}\n"
-            f"c = {c_str}\n"
-            f"offset = {off_str}\n"
+            f"{direction}: {expr}\n"
         )
