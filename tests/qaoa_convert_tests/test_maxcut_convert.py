@@ -18,32 +18,43 @@ from cqlib_algorithm.ansatz.qaoa_ansatz.qaoa_ansatz import build_qaoa_circuit
 from cqlib_algorithm.visualization.maxcut_plot import plot_maxcut
 from cqlib_algorithm.visualization.ansatz_plot import draw_ansatz
 
+
 def main():
     # 1) MaxCut instance
-    weights = {(0,1):1, (1,2):1, (2,3):1, (3,0):1}
+    weights = {(0, 1): 1, (1, 2): 1, (2, 3): 1, (3, 0): 1}
     mc = MaxCut(n=4, weights=weights)
 
     # 2) Visualize the instance
     plot_maxcut(n=mc.n, weights=mc.weights, partition={}, title="MaxCut Problem")
 
     # 3) Maxcut -> QUBO
-    qubo  = maxcut_to_qubo(mc)
+    qubo = maxcut_to_qubo(mc)
     print(qubo)
 
-    # 4) QUBO -> Ising 
+    # 4) QUBO -> Ising
     ising = qubo_to_ising(qubo)
     print(ising)
 
     # 5) Build QAOA circuit
     gammas = [0.8]
-    betas  = [0.2]
+    betas = [0.2]
     reps = 1
     mixer_operator = "x"
-    circ = build_qaoa_circuit(ising.n, ising.h, ising.J, reps, betas, gammas, mixer_operator, name="Maxcut_ansatz")
+    circ = build_qaoa_circuit(
+        ising.n,
+        ising.h,
+        ising.J,
+        reps,
+        betas,
+        gammas,
+        mixer_operator,
+        name="Maxcut_ansatz",
+    )
     print(circ.qcis)
- 
+
     # 6) Draw circuit
     draw_ansatz(circ, title="Maxcut Ansatz")
+
 
 if __name__ == "__main__":
     main()
