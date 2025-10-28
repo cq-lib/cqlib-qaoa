@@ -23,21 +23,24 @@ from cqlib_algorithm.visualization.ansatz_plot import draw_ansatz
 
 def main():
     # 1) Vrp instance
-    distance = np.array([
-        [0,  2,  6,  7,  3],   # depot 0
-        [2,  0,  4,  3,  5],   # customer 1
-        [6,  4,  0,  6,  2],   # customer 2
-        [7,  3,  6,  0,  4],   # customer 3
-        [3,  5,  2,  4,  0],   # customer 4
-    ], dtype=float)
-    demand = np.array([0, 1, 1, 1, 1], dtype=float) 
+    distance = np.array(
+        [
+            [0, 2, 6, 7, 3],  # depot 0
+            [2, 0, 4, 3, 5],  # customer 1
+            [6, 4, 0, 6, 2],  # customer 2
+            [7, 3, 6, 0, 4],  # customer 3
+            [3, 5, 2, 4, 0],  # customer 4
+        ],
+        dtype=float,
+    )
+    demand = np.array([0, 1, 1, 1, 1], dtype=float)
     vrp = VRP(
         n=5,
         distance=distance,
         demand=demand,
         vehicle_count=2,
-        capacity=2,              
-        positions_per_vehicle=None
+        capacity=2,
+        positions_per_vehicle=None,
     )
 
     # 2) Visualize the instance
@@ -48,19 +51,29 @@ def main():
     print(qubo)
 
     # 4) QUBO -> Ising
-    ising = qubo_to_ising(qubo) 
+    ising = qubo_to_ising(qubo)
     print(ising)
 
     # 5) Build QAOA circuit
-    betas  = [0.4]
+    betas = [0.4]
     gammas = [0.6]
     reps = 1
     mixer_operator = "x"
-    circ = build_qaoa_circuit(ising.n, ising.h, ising.J, reps, betas, gammas, mixer_operator, name="VRP_ansatz")
+    circ = build_qaoa_circuit(
+        ising.n,
+        ising.h,
+        ising.J,
+        reps,
+        betas,
+        gammas,
+        mixer_operator,
+        name="VRP_ansatz",
+    )
     print(circ.qcis)
 
     # 6) Draw circuit
     draw_ansatz(circ, title="VRP Ansatz")
+
 
 if __name__ == "__main__":
     main()

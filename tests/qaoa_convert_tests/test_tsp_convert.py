@@ -23,11 +23,7 @@ from cqlib_algorithm.visualization.ansatz_plot import draw_ansatz
 
 def main():
     # 1) Tsp instance
-    distance_matrix = np.array([
-        [0, 48, 91],
-        [48, 0, 63],
-        [91, 63, 0]
-    ])
+    distance_matrix = np.array([[0, 48, 91], [48, 0, 63], [91, 63, 0]])
     tsp = TSP(n=3, distance_matrix=distance_matrix)
 
     # 2) Visualize the instance
@@ -42,11 +38,20 @@ def main():
     print(ising)
 
     # 5) Build QAOA circuit
-    betas  = [0.2]
+    betas = [0.2]
     gammas = [0.8]
     reps = 1
     mixer_operator = "x"
-    circ = build_qaoa_circuit(ising.n, ising.h, ising.J, reps, betas, gammas, mixer_operator, name="TSP_ansatz")
+    circ = build_qaoa_circuit(
+        ising.n,
+        ising.h,
+        ising.J,
+        reps,
+        betas,
+        gammas,
+        mixer_operator,
+        name="TSP_ansatz",
+    )
     print(circ.qcis)
 
     # 6) Draw circuit

@@ -21,25 +21,29 @@ from cqlib_algorithm.execution import LocalRunner, TianYanRunner
 from cqlib_algorithm.algorithms.qaoa import QAOASolver, QAOAConfig
 from cqlib_algorithm.optimizers.options import OptimizerOptions
 
+
 def main():
     # 1) Vrp instance
-    distance = np.array([
-        [0,  2,  6,  7,  3],   # depot 0
-        [2,  0,  4,  3,  5],   # customer 1
-        [6,  4,  0,  6,  2],   # customer 2
-        [7,  3,  6,  0,  4],   # customer 3
-        [3,  5,  2,  4,  0],   # customer 4
-    ], dtype=float)
-    demand = np.array([0, 1, 1, 1, 1], dtype=float) 
+    distance = np.array(
+        [
+            [0, 2, 6, 7, 3],  # depot 0
+            [2, 0, 4, 3, 5],  # customer 1
+            [6, 4, 0, 6, 2],  # customer 2
+            [7, 3, 6, 0, 4],  # customer 3
+            [3, 5, 2, 4, 0],  # customer 4
+        ],
+        dtype=float,
+    )
+    demand = np.array([0, 1, 1, 1, 1], dtype=float)
     vrp = VRP(
         n=5,
         distance=distance,
         demand=demand,
         vehicle_count=2,
-        capacity=2,               
-        positions_per_vehicle=None
+        capacity=2,
+        positions_per_vehicle=None,
     )
-    
+
     # 2) Visualize the instance
     plot_vrp(vrp.distance, routes=[], depot=0, title="VRP Problem")
 
@@ -48,29 +52,43 @@ def main():
     print(qubo)
 
     # 4) QUBO -> Ising
-    ising = qubo_to_ising(qubo) 
+    ising = qubo_to_ising(qubo)
     print(ising)
 
     # 5) Select optimizer
     # SPSA
-    #opt_cfg = OptimizerOptions(name="spsa", options={"maxiter": 50, "a": 0.2, "c": 0.2, "seed": 123})
+    # opt_cfg = OptimizerOptions(name="spsa", options={"maxiter": 50, "a": 0.2, "c": 0.2, "seed": 123})
     # COBYLA
-    #opt_cfg = OptimizerOptions(name="cobyla",options={"maxiter": 50,"rhobeg": 1.0,"rhoend": 1e-3})
+    # opt_cfg = OptimizerOptions(name="cobyla",options={"maxiter": 50,"rhobeg": 1.0,"rhoend": 1e-3})
     # Nelder-Mead
-    opt_cfg = OptimizerOptions(name="nelder_mead",options={"maxiter": 50,"initial_step": 0.05,"alpha": 1.0,"gamma": 2.0,"rho": 0.5,"sigma": 0.5,"ftol": 1e-6,"xtol": 1e-6})
+    opt_cfg = OptimizerOptions(
+        name="nelder_mead",
+        options={
+            "maxiter": 50,
+            "initial_step": 0.05,
+            "alpha": 1.0,
+            "gamma": 2.0,
+            "rho": 0.5,
+            "sigma": 0.5,
+            "ftol": 1e-6,
+            "xtol": 1e-6,
+        },
+    )
 
     # 6) Solving with QAOA
-    solver = QAOASolver(ising, 
-                        runner=LocalRunner(), 
-                        qaoa_cfg=QAOAConfig(reps=2, mixer="x"), 
-                        opt_cfg=opt_cfg)
+    solver = QAOASolver(
+        ising,
+        runner=LocalRunner(),
+        qaoa_cfg=QAOAConfig(reps=2, mixer="x"),
+        opt_cfg=opt_cfg,
+    )
 
     res = solver.run()
 
     # 7) Print optimization results
     # Print measurement results
     res.print_result()
-    
+
     # Print convergence curve
     res.plot_history(title="Optimization History")
 
@@ -78,7 +96,15 @@ def main():
     res.plot_probability(title="QAOA Probability (best θ)", topk=20)
 
     # Print optimization solution
-    res.plot_vrp_solution(distance=vrp.distance, n=vrp.n, vehicle_count=vrp.vehicle_count, positions_per_vehicle=vrp.positions_per_vehicle, depot=0, title="VRP Solution (QAOA)")
+    res.plot_vrp_solution(
+        distance=vrp.distance,
+        n=vrp.n,
+        vehicle_count=vrp.vehicle_count,
+        positions_per_vehicle=vrp.positions_per_vehicle,
+        depot=0,
+        title="VRP Solution (QAOA)",
+    )
+
 
 if __name__ == "__main__":
     main()
