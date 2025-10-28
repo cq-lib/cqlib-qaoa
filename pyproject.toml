@@ -4,12 +4,12 @@ description = "Quantum algorithm package based on Cqlib"
 authors = [
     { name = "China Telecom Quantum Group Quantum Computing Team", email = "tianyan@chinatelecom.cn" },
 ]
-license = { text = "Apache 2.0" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
     "Environment :: Console",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
@@ -45,7 +45,7 @@ Repository = "https://gitee.com/cq-lib/cqlib-algorithm"
 Issues = "https://gitee.com/cq-lib/cqlib-algorithm/issues"
 
 [tool.setuptools]
-packages = ["cqlib_algorithm"]
+packages = { find = { } }
 
 [build-system]
 requires = ["setuptools>=80.0", "wheel"]

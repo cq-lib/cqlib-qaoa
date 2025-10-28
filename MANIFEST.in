@@ -1,0 +1,11 @@
+include LICENSE
+include README.md
+
+include pyproject.toml
+recursive-include cqlib_algorithm *.py
+
+global-exclude __pycache__/*
+global-exclude *.py[cod]
+global-exclude .DS_Store
+global-exclude *.c
+global-exclude *.h
