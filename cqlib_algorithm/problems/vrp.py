@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,10 +13,10 @@
 """VRP problem container."""
 
 from dataclasses import dataclass
-from typing import Optional, Tuple, Literal
+from typing import Literal
 import numpy as np
 
-Edge = Tuple[int, int]
+Edge = tuple[int, int]
 
 
 @dataclass
@@ -31,10 +31,7 @@ class VRP:
         demand: Length-n vector of customer demands; ``demand[0]`` must be 0.
             If ``None`` or empty, defaults to 1 for customers (1..n-1) and 0 for depot.
         vehicle_count: Number of vehicles K.
-        capacity: Capacity per vehicle (if ``positions_per_vehicle`` is unset,
-            it defaults to this value).
-        positions_per_vehicle: Number of customer slots per vehicle (P). If ``None``,
-            set to ``capacity``.
+        capacity: Capacity per vehicle (Optional).
         gen_method: Distance generation method: ``"euclidean"`` (from random
             coordinates) or ``"random_symmetric"`` (random symmetric weights).
         coord_range: Coordinate range for Euclidean generation.
@@ -47,24 +44,23 @@ class VRP:
     """
 
     n: int
-    distance: Optional[np.ndarray] = None
-    demand: Optional[np.ndarray] = None
+    distance: np.ndarray | None = None
+    demand: np.ndarray | None = None
     vehicle_count: int = 1
     capacity: int = 0
-    positions_per_vehicle: Optional[int] = None
 
-    # ---- random-instance parameters (used when weights is None) ----
+    # ---- random-instance parameters (used when distance is None) ----
     gen_method: Literal["euclidean", "random_symmetric"] = "euclidean"
-    coord_range: Tuple[float, float] = (0.0, 100.0)
+    coord_range: tuple[float, float] = (0.0, 100.0)
     dim: int = 2
     as_int: bool = True
-    round_digits: Optional[int] = None
-    weight_range: Tuple[float, float] = (1.0, 100.0)
-    seed: Optional[int] = None
-    dist_limit: Tuple[float, float] = (0.0, 100.0)
+    round_digits: int | None = None
+    weight_range: tuple[float, float] = (1.0, 100.0)
+    seed: int | None = None
+    dist_limit: tuple[float, float] = (0.0, 100.0)
 
     def __post_init__(self):
-        """Generate/validate distance and demand arrays; set default P from capacity.
+        """Generate/validate distance and demand arrays.
 
         Raises:
             AssertionError: If shapes/symmetry/zeros-on-diagonal are invalid or
@@ -97,21 +93,19 @@ class VRP:
         assert np.all(np.diag(self.distance) == 0)
         assert self.demand.shape == (self.n,)
         assert abs(self.demand[0]) < 1e-12
-        if self.positions_per_vehicle is None:
-            self.positions_per_vehicle = int(self.capacity)
 
     @staticmethod
     def _random_distance(
         n: int,
         *,
         method: Literal["euclidean", "random_symmetric"] = "euclidean",
-        coord_range: Tuple[float, float] = (0.0, 100.0),
+        coord_range: tuple[float, float] = (0.0, 100.0),
         dim: int = 2,
         as_int: bool = True,
-        round_digits: Optional[int] = None,
-        weight_range: Tuple[float, float] = (1.0, 100.0),
-        seed: Optional[int] = None,
-        dist_limit: Tuple[float, float] = (0.0, 100.0),
+        round_digits: int | None = None,
+        weight_range: tuple[float, float] = (1.0, 100.0),
+        seed: int | None = None,
+        dist_limit: tuple[float, float] = (0.0, 100.0),
     ) -> np.ndarray:
         """Generate a symmetric distance matrix with zeros on the diagonal.
 
@@ -150,7 +144,6 @@ class VRP:
         else:
             raise ValueError('method must be "euclidean" or "random_symmetric"')
 
-        # Clip into requested limits
         lo, hi = dist_limit
         D = np.clip(D, lo, hi)
 

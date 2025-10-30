@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -10,24 +10,26 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Optimizers public API.
+"""Optimizers Module.
 
-Exports:
-    Optimizer: Abstract optimizer interface.
-    OptimResult: Result container returned by optimizers.
-    Objective: Callable protocol type for objective functions.
-    OptimizerOptions: Configurable options for creating optimizers.
-    OptimizerFactory: Factory for constructing optimizers from options.
+This package provides classical optimizers used within hybrid quantum-classical
+algorithms.
+
 """
 
-from .base import Optimizer, OptimResult, Objective
+from .base import Optimizer, OptimResult
 from .options import OptimizerOptions
 from .factory import OptimizerFactory
+from .spsa import SPSA
+from .cobyla import COBYLA
+from .nelder_mead import NelderMead
 
 __all__ = [
     "Optimizer",
     "OptimResult",
-    "Objective",
     "OptimizerOptions",
     "OptimizerFactory",
+    "SPSA",
+    "COBYLA",
+    "NelderMead",
 ]

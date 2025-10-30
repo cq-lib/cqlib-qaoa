@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -20,7 +20,7 @@ This module provides:
 """
 
 import numpy as np
-from typing import Dict, Tuple
+from typing import Any
 
 from cqlib_algorithm.problems.maxcut import MaxCut
 from cqlib_algorithm.problems.tsp import TSP
@@ -28,7 +28,7 @@ from cqlib_algorithm.problems.vrp import VRP
 from cqlib_algorithm.mappings.qubo import QUBO
 from cqlib_algorithm.mappings.hamiltonian import IsingHamiltonian
 
-Edge = Tuple[int, int]
+Edge = tuple[int, int]
 
 
 # ------- MaxCut → QUBO -------
@@ -98,7 +98,7 @@ def tsp_to_qubo(problem: TSP, A: float = 10000) -> QUBO:
     c = np.zeros(N, dtype=float)
     offset = 0.0
 
-    A_pen = 2.0 * A
+    A_pen = 2.0 * A 
 
     def idx(i, j):
         """Linear index for variable x_{i,j}."""
@@ -109,26 +109,24 @@ def tsp_to_qubo(problem: TSP, A: float = 10000) -> QUBO:
         if u == v:
             Q[u, u] += coef
         else:
-            Q[u, v] += 0.5 * coef
-            Q[v, u] += 0.5 * coef
+            Q[u, v] += 0.5 * coef 
+            Q[v, u] += 0.5 * coef 
 
-    # Constraint 1: each position has exactly one city => A_pen * (1 - sum_i x_{i,j})^2
     for j in range(n):
         for i in range(n):
             u = idx(i, j)
-            add_sym(u, u, A_pen)
-            c[u] += -2.0 * A_pen
-        offset += A_pen
+            add_sym(u, u, A_pen) 
+            c[u] += -2.0 * A_pen 
+        offset += A_pen     
 
         for i in range(n):
             for k in range(i + 1, n):
                 add_sym(idx(i, j), idx(k, j), 2.0 * A_pen)
 
-    # Constraint 2: each city appears exactly once => A_pen * (1 - sum_j x_{i,j})^2
     for i in range(n):
         for j in range(n):
             u = idx(i, j)
-            add_sym(u, u, A_pen)
+            add_sym(u, u, A_pen) 
             c[u] += -2.0 * A_pen
         offset += A_pen
 
@@ -136,7 +134,6 @@ def tsp_to_qubo(problem: TSP, A: float = 10000) -> QUBO:
             for k in range(j + 1, n):
                 add_sym(idx(i, j), idx(i, k), 2.0 * A_pen)
 
-    # Objective: path distance (adjacent positions t -> t+1 with wrap-around)
     for i in range(n):
         for j in range(n):
             if i == j:
@@ -144,102 +141,187 @@ def tsp_to_qubo(problem: TSP, A: float = 10000) -> QUBO:
             for t in range(n):
                 u = idx(i, t)
                 v = idx(j, (t + 1) % n)
-                add_sym(u, v, D[i, j])
+                add_sym(u, v, D[i, j]) 
 
     qubo = QUBO(Q=Q, c=c, offset=offset)
     setattr(qubo, "sense", "min")
     return qubo
 
 
-def vrp_to_qubo(vrp: VRP, A_assign: float = 10000, A_pos: float = 10000) -> QUBO:
-    """Convert a capacitated VRP into a QUBO.
+# # ------- VRP → QUBO -------
+def vrp_to_qubo(vrp, A_assign: float = 10000, A_pos: float = 10000) -> "QUBO":
+    """Convert a Vehicle Routing Problem (VRP) instance into a QUBO model.
 
-    Variables: x_{i,p,k} indicates customer i is placed at position p of vehicle k.
-    Depot is node 0; customers are 1..n-1.
+    This function automatically detects whether the VRP instance includes
+    vehicle capacity information (i.e., `positions_per_vehicle` or `capacity` > 0).
+    If so, it uses a **position-based capacitated formulation**; otherwise,
+    it uses a **uncapacitated arc-based formulation**.
 
-    Constraints (penalized):
-        1) Each customer appears exactly once.
-        2) Each (vehicle, position) holds at most one customer (pairwise penalty).
+    When capacity/position information is provided, binary variables are:
+        x_{i,p,k} = 1 if customer i is served at position p by vehicle k.
 
-    Objective:
-        Minimize total traveled distance including depot→first, neighbors, and last→depot.
+    Otherwise (uncapacitated case), binary variables are:
+        y_{i,j} = 1 if the directed arc i -> j is traversed.
 
     Args:
-        vrp: VRP instance with fields:
-            - ``n``: number of nodes including depot (0)
-            - ``distance``: (n × n) symmetric distance matrix or coordinates
-            - ``vehicle_count``: number of vehicles K
-            - ``positions_per_vehicle``: positions per vehicle P (capacity)
-        A_assign: Penalty for the assignment (exactly-once) constraint.
-        A_pos: Penalty for the per-slot uniqueness constraint.
+        vrp: A VRP instance with the following attributes:
+            - n: int, number of nodes including depot (0).
+            - distance: np.ndarray, (n × n) distance matrix.
+            - vehicle_count: int, number of vehicles.
+            - capacity (optional): int, vehicle capacity.
+        A_assign: float, penalty coefficient for assignment or degree constraints.
+        A_pos: float, penalty coefficient for position uniqueness constraints.
 
     Returns:
-        QUBO: Quadratic model with ``sense="min"``.
+        QUBO: A quadratic unconstrained binary optimization (QUBO) model
+        with attributes:
+            - Q: np.ndarray, quadratic coefficient matrix.
+            - c: np.ndarray, linear coefficient vector.
+            - offset: float, constant offset term.
+            - sense: "min", objective is to be minimized.
     """
-    n, K, P = vrp.n, vrp.vehicle_count, vrp.positions_per_vehicle
+    n = int(vrp.n)
+    K = int(vrp.vehicle_count)
     D = vrp.distance
-    customers = list(range(1, n))
-    I = len(customers)
-    N = I * P * K
 
+    # ---------------------------------------------------------------------
+    # Detect whether the instance contains capacity information.
+    # ---------------------------------------------------------------------
+    P = None
+    if getattr(vrp, "positions_per_vehicle", None) and int(vrp.positions_per_vehicle) > 0:
+        P = int(vrp.positions_per_vehicle)
+    elif getattr(vrp, "capacity", None) and int(vrp.capacity) > 0:
+        P = int(vrp.capacity)
+
+    # =====================================================================
+    # Case 1: Capacitated VRP using position-based binary variables x_{i,p,k}
+    # =====================================================================
+    if P is not None and P > 0:
+        customers = list(range(1, n))         
+        I = len(customers)
+        N = I * P * K                          
+
+        Q = np.zeros((N, N), dtype=float)
+        c = np.zeros(N, dtype=float)
+        offset = 0.0
+
+        def vid(i: int, p: int, k: int) -> int:
+            ii = i - 1
+            return ii * (P * K) + p * K + k 
+
+        def add_sym(u: int, v: int, val: float):
+            if u == v:
+                Q[u, u] += val
+            else:
+                Q[u, v] += val
+                Q[v, u] += val
+
+        # Constraint 1: each customer exactly once  A_assign * (Σ_{p,k} x - 1)^2
+        for i in customers:
+            vars_i = [vid(i, p, k) for p in range(P) for k in range(K)]
+            for u in vars_i:
+                add_sym(u, u, A_assign)    
+                c[u]    += -2.0 * A_assign
+            offset += A_assign
+            for a in range(len(vars_i)):
+                for b in range(a + 1, len(vars_i)):
+                    add_sym(vars_i[a], vars_i[b], 2 * A_assign)
+
+        # Constraint 2: each (vehicle, position) at most one customer
+        for k in range(K):
+            for p in range(P):
+                vars_pk = [vid(i, p, k) for i in customers]
+                for a in range(I):
+                    for b in range(a + 1, I):
+                        add_sym(vars_pk[a], vars_pk[b], 2 * A_pos)
+
+        for k in range(K):
+            for i in customers:
+                u = vid(i, 0, k)
+                c[u] += D[0, i]
+
+        for k in range(K):
+            for p in range(P - 1):
+                for i in customers:
+                    for j in customers:
+                        if i == j: 
+                            continue
+                        u = vid(i, p, k)
+                        v = vid(j, p + 1, k)
+                        add_sym(u, v, D[i, j])
+
+        # last -> depot
+        for k in range(K):
+            for i in customers:
+                u = vid(i, P - 1, k)
+                c[u] += D[i, 0]
+
+        qubo = QUBO(Q=Q, c=c, offset=offset)
+        setattr(qubo, "sense", "min") 
+        return qubo
+
+    # =====================================================================
+    # Case 2: Uncapacitated VRP using arc-based binary variables y_{i,j}
+    # =====================================================================
+    depot = 0
+    
+    def eid(i: int, j: int) -> int:
+        return i * (n - 1) + (j - 1 if j > i else j)
+
+    N = n * (n - 1)
     Q = np.zeros((N, N), dtype=float)
     c = np.zeros(N, dtype=float)
     offset = 0.0
-
-    # Variable indexing: i in customers → (i-1) compact index
-    def vid(i: int, p: int, k: int) -> int:
-        ii = i - 1
-        return ii * (P * K) + p * K + k
 
     def add_sym(u: int, v: int, val: float):
         if u == v:
             Q[u, u] += val
         else:
-            Q[u, v] += val
-            Q[v, u] += val
+            Q[u, v] += 0.5 * val
+            Q[v, u] += 0.5 * val
 
-    # Constraint 1: each customer exactly once  A_assign * (Σ_{p,k} x - 1)^2
-    for i in customers:
-        vars_i = [vid(i, p, k) for p in range(P) for k in range(K)]
-        for u in vars_i:
-            add_sym(u, u, A_assign)
-            c[u] += -2.0 * A_assign
-        offset += A_assign
-        for a in range(len(vars_i)):
-            for b in range(a + 1, len(vars_i)):
-                add_sym(vars_i[a], vars_i[b], 2 * A_assign)
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            c[eid(i, j)] += float(D[i, j])
 
-    # Constraint 2: each (vehicle, position) at most one customer
-    for k in range(K):
-        for p in range(P):
-            vars_pk = [vid(i, p, k) for i in customers]
-            for a in range(I):
-                for b in range(a + 1, I):
-                    add_sym(vars_pk[a], vars_pk[b], 2 * A_pos)
+    def add_equal_sum_squared(vars_idx: list[int], t: float, A: float):
+        nonlocal offset
+        m = len(vars_idx)
+        if m == 0:
+            offset += A * (t ** 2)
+            return
+        for u in vars_idx:
+            add_sym(u, u, A)      
+            c[u] += -2.0 * A * t
+        for a in range(m):
+            ua = vars_idx[a]
+            for b in range(a + 1, m):
+                ub = vars_idx[b]
+                add_sym(ua, ub, 2.0 * A) 
+        offset += A * (t ** 2)
 
-    # Objective: total distance
-    # depot -> first
-    for k in range(K):
-        for i in customers:
-            u = vid(i, 0, k)
-            c[u] += D[0, i]
+    for v in range(n):
+        if v == depot:
+            continue
+        out_vars = [eid(v, j) for j in range(n) if j != v]
+        in_vars  = [eid(i, v) for i in range(n) if i != v]
+        add_equal_sum_squared(out_vars, 1.0, A_assign)
+        add_equal_sum_squared(in_vars,  1.0, A_assign)
 
-    # adjacent positions
-    for k in range(K):
-        for p in range(P - 1):
-            for i in customers:
-                for j in customers:
-                    if i == j:
-                        continue
-                    u = vid(i, p, k)
-                    v = vid(j, p + 1, k)
-                    add_sym(u, v, D[i, j])
+    out_vars_dep = [eid(depot, j) for j in range(n) if j != depot]
+    in_vars_dep  = [eid(i, depot) for i in range(n) if i != depot]
+    add_equal_sum_squared(out_vars_dep, float(K), A_assign)
+    add_equal_sum_squared(in_vars_dep,  float(K), A_assign)
 
-    # last -> depot
-    for k in range(K):
-        for i in customers:
-            u = vid(i, P - 1, k)
-            c[u] += D[i, 0]
+    S_max = 0
+    if S_max >= 2:
+        import itertools
+        for s in range(2, min(S_max, n - 1) + 1):
+            for S in itertools.combinations([v for v in range(n) if v != depot], s):
+                idxs = [eid(i, j) for i in S for j in S if i != j]
+                add_equal_sum_squared(idxs, float(s - 1), A_pos)
 
     qubo = QUBO(Q=Q, c=c, offset=offset)
     setattr(qubo, "sense", "min")
@@ -248,7 +330,8 @@ def vrp_to_qubo(vrp: VRP, A_assign: float = 10000, A_pos: float = 10000) -> QUBO
 
 # ------- QUBO → Ising -------
 def qubo_to_ising(qubo: QUBO, *, zero_tol: float = 1e-12) -> IsingHamiltonian:
-    """Convert a QUBO to Ising."""
+    """Convert a QUBO to Ising.
+    """
     sense = getattr(qubo, "sense", "min")
     sign = -1.0 if sense == "max" else 1.0
 
@@ -256,20 +339,18 @@ def qubo_to_ising(qubo: QUBO, *, zero_tol: float = 1e-12) -> IsingHamiltonian:
     c_eff = sign * np.asarray(qubo.c, dtype=float)
     off_eff = sign * float(getattr(qubo, "offset", 0.0))
 
-    # Symmetrize
     Qs = 0.5 * (Q_eff + Q_eff.T)
     n = Qs.shape[0]
     one = np.ones(n)
 
-    # ====== Core mapping ======
     h_vec = -0.5 * (Qs @ one + c_eff)
     h = {i: float(h_vec[i]) for i in range(n) if abs(h_vec[i]) > zero_tol}
 
     offset = 0.25 * float(one @ (Qs @ one)) + 0.5 * float(c_eff @ one) + off_eff
 
-    J: Dict[tuple[int, int], float] = {}
+    J: dict[tuple[int, int], float] = {}
     for i in range(n):
-        offset += 0.25 * float(Qs[i, i])
+        offset += 0.25 * float(Qs[i, i]) 
         for j in range(i + 1, n):
             val = 0.5 * Qs[i, j]
             if abs(val) > zero_tol:

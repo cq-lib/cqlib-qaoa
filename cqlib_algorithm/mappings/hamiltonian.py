@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,9 +13,8 @@
 """Ising Hamiltonian."""
 
 from dataclasses import dataclass
-from typing import Dict, Tuple, List
 
-Edge = Tuple[int, int]
+Edge = tuple[int, int]
 
 
 @dataclass
@@ -30,8 +29,8 @@ class IsingHamiltonian:
     """
 
     n: int
-    h: Dict[int, float]
-    J: Dict[Edge, float]
+    h: dict[int, float]
+    J: dict[Edge, float]
     offset: float = 0.0
 
     def __str__(self) -> str:
@@ -56,8 +55,8 @@ class IsingHamiltonian:
         Returns:
             str: Multi-line human-readable representation.
         """
-        paulis: List[str] = []
-        coeffs: List[str] = []
+        paulis: list[str] = []
+        coeffs: list[str] = []
 
         # Single-qubit Z terms
         for i, v in sorted(self.h.items()):
@@ -82,7 +81,6 @@ class IsingHamiltonian:
         if abs(self.offset) > 1e-12:
             offset = self.offset
 
-        # Assemble strings
         pauli_str = ", ".join([f"'{p}'" for p in paulis])
         coeff_str = ", ".join(coeffs)
         return (

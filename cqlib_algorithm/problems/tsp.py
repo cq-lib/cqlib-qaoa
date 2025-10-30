@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,10 +13,10 @@
 """TSP problem container."""
 
 from dataclasses import dataclass
-from typing import Optional, Tuple, Literal
+from typing import Literal
 import numpy as np
 
-Edge = Tuple[int, int]
+Edge = tuple[int, int]
 
 
 @dataclass
@@ -41,16 +41,16 @@ class TSP:
     """
 
     n: int
-    distance_matrix: Optional[np.ndarray] = None
+    distance_matrix: np.ndarray | None = None
 
     # ---- random-instance parameters (used when weights is None) ----
     gen_method: Literal["euclidean", "random_symmetric"] = "euclidean"
-    coord_range: Tuple[float, float] = (0.0, 100.0)
+    coord_range: tuple[float, float] = (0.0, 100.0)
     dim: int = 2
     as_int: bool = True
-    round_digits: Optional[int] = None
-    weight_range: Tuple[float, float] = (1.0, 100.0)
-    seed: Optional[int] = None
+    round_digits: int | None = None
+    weight_range: tuple[float, float] = (1.0, 100.0)
+    seed: int | None = None
 
     def __post_init__(self):
         """Generate or validate the distance matrix after initialization.
@@ -87,12 +87,12 @@ class TSP:
         n: int,
         *,
         method: Literal["euclidean", "random_symmetric"] = "euclidean",
-        coord_range: Tuple[float, float] = (0.0, 100.0),
+        coord_range: tuple[float, float] = (0.0, 100.0),
         dim: int = 2,
         as_int: bool = True,
-        round_digits: Optional[int] = None,
-        weight_range: Tuple[float, float] = (1.0, 100.0),
-        seed: Optional[int] = None,
+        round_digits: int | None = None,
+        weight_range: tuple[float, float] = (1.0, 100.0),
+        seed: int | None = None,
     ) -> np.ndarray:
         """Generate a symmetric n×n distance matrix D with D[i,i]=0 and D[i,j]=D[j,i]>0.
 
@@ -133,7 +133,6 @@ class TSP:
         else:
             raise ValueError('method must be "euclidean" or "random_symmetric"')
 
-        # Integer casting or decimal rounding
         if as_int:
             D = np.rint(D).astype(float)
             i, j = np.where((~np.eye(n, dtype=bool)) & (D == 0.0))

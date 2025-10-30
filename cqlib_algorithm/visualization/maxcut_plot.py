@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -12,18 +12,18 @@
 
 """Max-Cut instance visualization."""
 
-from typing import Dict, Tuple, Iterable, Optional
+from typing import Iterable
 import matplotlib.pyplot as plt
 import networkx as nx
 
-Edge = Tuple[int, int]
+Edge = tuple[int, int]
 
 
 def plot_maxcut(
     n: int,
-    weights: Dict[Edge, float],
-    partition: Optional[Iterable[int]] = None,
-    pos: Optional[Dict[int, Tuple[float, float]]] = None,
+    weights: dict[Edge, float],
+    partition: Iterable[int] | None = None,
+    pos: dict[int, tuple[float, float]] | None = None,
     title: str = "Max-Cut instance",
     figsize=(5, 5),
     show_weights: bool = True,

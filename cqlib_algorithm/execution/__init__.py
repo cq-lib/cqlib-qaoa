@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -18,8 +18,8 @@ Exports:
     LocalRunner: Local simulation runner.
 """
 
-from cqlib_algorithm.execution.platform_runner import TianYanRunner, SubmitResult
-from cqlib_algorithm.execution.local_runner import LocalRunner
+from .platform_runner import TianYanRunner, SubmitResult
+from .local_runner import LocalRunner
 
 __all__ = [
     "TianYanRunner",

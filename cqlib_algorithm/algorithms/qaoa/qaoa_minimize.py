@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,7 +13,7 @@
 """QAOA objective wrapper and minimization moduel."""
 
 from __future__ import annotations
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 from cqlib_algorithm.algorithms.qaoa.qaoa_evaluator import QAOAEvaluator
 from cqlib_algorithm.optimizers.base import Optimizer
@@ -40,10 +40,10 @@ class QAOAMinimizer:
         self.ising = ising
         self.evaluator = evaluator
         self.wrap_angles = wrap_angles
-        self._last_raw_result: Optional[Dict[str, Any]] = None
+        self._last_raw_result: dict[str, Any] | None = None
 
     def _objective_scalar(
-        self, theta: List[float], need_transpile: Optional[bool]
+        self, theta: list[float], need_transpile: bool | None
     ) -> float:
         """Evaluate parameters and return a scalar energy.
 
@@ -63,11 +63,6 @@ class QAOAMinimizer:
         Raises:
             TypeError: If the evaluator output type or structure is unsupported.
         """
-        # theta = np.mod(theta, 2*np.pi)
-        # n = len(theta)
-        # half = n // 2
-        # theta[:half] = np.mod(theta[:half], 2*np.pi)
-        # theta[half:] = np.mod(theta[half:], np.pi)
         out = self.evaluator.evaluate(theta, need_transpile=need_transpile)
 
         # 1) Scalar output
@@ -75,7 +70,7 @@ class QAOAMinimizer:
             self._last_raw_result = None
             return float(out)
 
-        # 2) Dict output
+        # 2) dict output
         if isinstance(out, dict):
             energy = out.get("energy", None)
             if energy is None:
@@ -85,7 +80,7 @@ class QAOAMinimizer:
             self._last_raw_result = out
             return float(energy)
 
-        # 3) Tuple/List output
+        # 3) tuple/list output
         if isinstance(out, (tuple, list)) and len(out) >= 1:
             energy = out[0]
             raw = None
@@ -104,12 +99,12 @@ class QAOAMinimizer:
 
     def minimize(
         self,
-        theta0: List[float],
+        theta0: list[float],
         *,
         optimizer: Optimizer,
-        need_transpile: Optional[bool] = None,
+        need_transpile: bool | None = None,
         verbose: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run the provided optimizer on the QAOA objective.
 
         Args:
@@ -128,17 +123,11 @@ class QAOAMinimizer:
                 - ``result_raw``: Last cached raw evaluator result (dict or None).
         """
 
-        def obj(theta: List[float]) -> float:
+        def obj(theta: list[float]) -> float:
             return self._objective_scalar(theta, need_transpile)
 
         def cb(theta, fval, it, nfev):
             if verbose:
-                # print(f"[iter={it:3d}] f={fval:.6f} theta={theta}")
-                # theta_wrapped = np.mod(theta, 2*np.pi)
-                # n = len(theta)
-                # half = n // 2
-                # theta[:half] = np.mod(theta[:half], 2*np.pi)
-                # theta[half:] = np.mod(theta[half:], np.pi)
                 theta_str = "[" + ", ".join(f"{x:.3f}" for x in theta) + "]"
                 print(f"[iter={it:3d}] f={fval:.3f} theta={theta_str}")
 

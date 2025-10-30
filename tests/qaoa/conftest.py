@@ -10,23 +10,19 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Algorithms Module.
+"""Pytest configuration."""
 
-This package aggregates all algorithmic implementations under cqlib_algorithm.
+import pytest
+import matplotlib
 
-"""
 
-from .qaoa import (
-    QAOAConfig, QAOASolver,
-    QAOAEvaluator,
-    QAOAMinimizer,
-    QAOAResult,
-)
+@pytest.fixture(scope="session", autouse=True)
+def set_matplotlib_headless():
+    """Force Matplotlib to use a headless backend for all tests."""
+    try:
+        matplotlib.use("Agg", force=True)
+        import matplotlib.pyplot as plt
+        plt.show = lambda *args, **kwargs: None
 
-__all__ = [
-    "QAOAConfig", 
-    "QAOASolver",
-    "QAOAEvaluator",
-    "QAOAMinimizer",
-    "QAOAResult",
-]
+    except Exception as e:
+        print(f"Warning: Failed to set Matplotlib backend to Agg. {e}")

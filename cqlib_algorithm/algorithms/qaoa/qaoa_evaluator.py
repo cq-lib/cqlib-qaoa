@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,11 +13,10 @@
 """QAOA evaluator."""
 
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple
 
 from cqlib_algorithm.mappings.hamiltonian import IsingHamiltonian
 from cqlib_algorithm.execution import LocalRunner, TianYanRunner
-from cqlib_algorithm.ansatz.qaoa_ansatz.qaoa_ansatz import build_qaoa_circuit
+from cqlib_algorithm.ansatz.qaoa_ansatz import build_qaoa_circuit
 from cqlib_algorithm.execution.objective import expectation_from_probability
 
 
@@ -61,7 +60,7 @@ class QAOAEvaluator:
         self.shots = shots
         self.insert_barriers = insert_barriers
 
-    def _unflatten(self, theta: List[float]) -> Tuple[List[float], List[float]]:
+    def _unflatten(self, theta: list[float]) -> tuple[list[float], list[float]]:
         """Split a flat parameter vector into (gammas, betas).
 
         The convention used here is ``theta = [gammas..., betas...]``.
@@ -70,7 +69,7 @@ class QAOAEvaluator:
             theta: Flat parameter vector of length ``2 * reps``.
 
         Returns:
-            Tuple[List[float], List[float]]: Two lists containing ``gammas`` and
+            tuple[list[float], list[float]]: Two lists containing ``gammas`` and
             ``betas`` respectively, each of length ``reps``.
 
         Raises:
@@ -85,11 +84,11 @@ class QAOAEvaluator:
 
     def evaluate(
         self,
-        theta: List[float],
+        theta: list[float],
         *,
-        lab_id: Optional[int] = None,
-        need_transpile: Optional[bool] = None,
-    ) -> Tuple[float, Dict[str, float] | str, dict, dict]:
+        lab_id: int | None = None,
+        need_transpile: bool | None = None,
+    ) -> tuple[float, dict[str, float] | str, dict, dict]:
         """Build, run, and score a QAOA circuit for the given parameters.
 
         Args:
@@ -98,9 +97,9 @@ class QAOAEvaluator:
             need_transpile: Optional transpile toggle (used by :class:`TianYanRunner` only).
 
         Returns:
-            Tuple:
+            tuple:
                 - expval (float): Expected energy of the Ising Hamiltonian.
-                - prob (Dict[str, float] | str): Probability distribution over bitstrings.
+                - prob (dict[str, float] | str): Probability distribution over bitstrings.
                 - submit_info (dict): Submission information derived from the runner.
                 - result (dict): Raw execution result as returned by the runner.
 
