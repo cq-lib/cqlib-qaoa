@@ -20,7 +20,6 @@ This module provides:
 """
 
 import numpy as np
-from typing import Any
 
 from cqlib_algorithm.problems.maxcut import MaxCut
 from cqlib_algorithm.problems.tsp import TSP
@@ -149,7 +148,7 @@ def tsp_to_qubo(problem: TSP, A: float = 10000) -> QUBO:
 
 
 # # ------- VRP → QUBO -------
-def vrp_to_qubo(vrp, A_assign: float = 10000, A_pos: float = 10000) -> "QUBO":
+def vrp_to_qubo(problem: VRP, A_assign: float = 10000, A_pos: float = 10000) -> "QUBO":
     """Convert a Vehicle Routing Problem (VRP) instance into a QUBO model.
 
     This function automatically detects whether the VRP instance includes
@@ -180,18 +179,18 @@ def vrp_to_qubo(vrp, A_assign: float = 10000, A_pos: float = 10000) -> "QUBO":
             - offset: float, constant offset term.
             - sense: "min", objective is to be minimized.
     """
-    n = int(vrp.n)
-    K = int(vrp.vehicle_count)
-    D = vrp.distance
+    n = int(problem.n)
+    K = int(problem.vehicle_count)
+    D = problem.distance
 
     # ---------------------------------------------------------------------
     # Detect whether the instance contains capacity information.
     # ---------------------------------------------------------------------
     P = None
-    if getattr(vrp, "positions_per_vehicle", None) and int(vrp.positions_per_vehicle) > 0:
-        P = int(vrp.positions_per_vehicle)
-    elif getattr(vrp, "capacity", None) and int(vrp.capacity) > 0:
-        P = int(vrp.capacity)
+    if getattr(problem, "positions_per_vehicle", None) and int(problem.positions_per_vehicle) > 0:
+        P = int(problem.positions_per_vehicle)
+    elif getattr(problem, "capacity", None) and int(problem.capacity) > 0:
+        P = int(problem.capacity)
 
     # =====================================================================
     # Case 1: Capacitated VRP using position-based binary variables x_{i,p,k}
