@@ -40,7 +40,12 @@ def _classical_mds_2d(D: np.ndarray) -> np.ndarray:
     return X
 
 
-def plot_vrp(X: np.ndarray, routes=None, depot: int = 0, title: str = "VRP instance"):
+def plot_vrp(
+    X: np.ndarray, 
+    routes=None, 
+    depot: int = 0, 
+    title: str = "VRP instance"
+):
     """Plot a VRP instance and (optionally) per-vehicle routes.
 
     Accepts either coordinates ``(n, 2)`` or a symmetric distance matrix
