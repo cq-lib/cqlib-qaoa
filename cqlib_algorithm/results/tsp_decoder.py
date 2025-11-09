@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,7 +13,6 @@
 """Tsp decoder."""
 
 from __future__ import annotations
-from typing import Dict, Tuple, List
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -24,7 +23,7 @@ from cqlib_algorithm.mappings.hamiltonian import IsingHamiltonian
 
 
 def best_bitstring_from_probability(
-    prob: Dict[str, float] | str, ising: IsingHamiltonian
+    prob: dict[str, float] | str, ising: IsingHamiltonian
 ) -> str:
     """Select the lowest-energy bitstring under an Ising Hamiltonian.
 
@@ -44,7 +43,7 @@ def best_bitstring_from_probability(
     return best_b
 
 
-def _bitstr_to_assignment(bitstr: str, n: int) -> List[List[int]]:
+def _bitstr_to_assignment(bitstr: str, n: int) -> list[list[int]]:
     """Convert a length-N bitstring (N = n*n) into an n×n one-hot matrix.
 
     Indexing convention is ``idx = i*n + t`` for city ``i`` at position ``t``.
@@ -73,7 +72,7 @@ def _bitstr_to_assignment(bitstr: str, n: int) -> List[List[int]]:
     return X
 
 
-def _assignment_to_tour(X: List[List[int]]) -> List[int]:
+def _assignment_to_tour(X: list[list[int]]) -> list[int]:
     """Decode a one-hot matrix to a tour with simple repair.
 
     Args:
@@ -84,7 +83,7 @@ def _assignment_to_tour(X: List[List[int]]) -> List[int]:
     """
     n = len(X)
     unused = set(range(n))
-    tour: List[int] = []
+    tour: list[int] = []
     for t in range(n):
         cands = [i for i in unused if X[i][t] == 1]
         if len(cands) == 1:
@@ -102,8 +101,8 @@ def _assignment_to_tour(X: List[List[int]]) -> List[int]:
 
 
 def decode_from_platform_result(
-    result: Dict, n: int, *, ising: IsingHamiltonian
-) -> Tuple[str, List[int], List[List[int]]]:
+    result: dict, n: int, *, ising: IsingHamiltonian
+) -> tuple[str, list[int], list[list[int]]]:
     """Decode a TSP tour from a platform result payload.
 
     Picks the best bitstring (minimum Ising energy), converts it to a one-hot
@@ -115,7 +114,7 @@ def decode_from_platform_result(
         ising: Ising Hamiltonian used to score bitstrings.
 
     Returns:
-        Tuple[str, list[int], list[list[int]]]:
+        tuple[str, list[int], list[list[int]]]:
             - ``best_raw``: Best bitstring in platform order.
             - ``tour``: City sequence of length ``n`` (positions 0..n-1).
             - ``X``: One-hot assignment matrix ``n×n``.
@@ -131,12 +130,12 @@ def decode_from_platform_result(
 
 def plot_tsp_solution(
     distance_matrix,
-    result: Dict,
+    result: dict,
     *,
     title: str = "TSP Solution (QAOA)",
     show: bool = True,
     ising: IsingHamiltonian,
-) -> List[int]:
+) -> list[int]:
     """Visualize a TSP tour decoded from the platform result.
 
     Args:
@@ -166,7 +165,6 @@ def plot_tsp_solution(
             "distance_matrix must be (n,n) distances or (n,2) coordinates."
         )
 
-    # Compute tour length
     total_dist = 0.0
     for k in range(n):
         i = tour[k]

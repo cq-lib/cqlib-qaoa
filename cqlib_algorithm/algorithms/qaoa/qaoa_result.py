@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -14,8 +14,10 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List, Optional
+from typing import Any
 import matplotlib.pyplot as plt
+import math
+import numpy as np
 
 from cqlib_algorithm.visualization.probability_plot import draw_probability
 from cqlib_algorithm.visualization.history_plot import draw_history
@@ -45,15 +47,15 @@ class QAOAResult:
         ising: Ising Hamiltonian.
     """
 
-    theta_opt: List[float]
+    theta_opt: list[float]
     fun: float
-    history: Optional[List[Dict[str, Any]]] = None
+    history: list[dict[str, Any]] | None = None
     runner_name: str = "LocalRunner"
-    qaoa_cfg: Dict[str, Any] = field(default_factory=dict)
-    opt_cfg: Dict[str, Any] = field(default_factory=dict)
+    qaoa_cfg: dict[str, Any] = field(default_factory=dict)
+    opt_cfg: dict[str, Any] = field(default_factory=dict)
     submit_info: Any = None
-    result_raw: Optional[Dict[str, Any]] = None
-    ising: Optional[IsingHamiltonian] = None
+    result_raw: dict[str, Any] | None = None
+    ising: IsingHamiltonian | None = None
 
     def print_result(self, *, topk: int = 20, show: bool = True) -> None:
         """Print a human-readable summary of the submission and measurement results.
@@ -77,18 +79,18 @@ class QAOAResult:
         print("\n========== [ Experiment Information ] ==========")
         if "Local" in self.runner_name:
             # LocalRunner
-            print(f"任务ID     :", si.query_id)
-            print(f"shots 数量 :", si.num_shots)
+            print(f"Task ID  :", si.query_id)
+            print(f"Shots  :", si.num_shots)
         elif "TianYan" in self.runner_name:
             # TianYanRunner
-            print(f"实验集ID   :", getattr(si, "lab_id", ""))
-            print(f"任务ID     :", getattr(si, "query_id", ""))
-            print(f"机器选择   :", getattr(si, "machine", ""))
-            print(f"shots 数量 :", getattr(si, "num_shots", ""))
-            print(f"拓扑映射   :", getattr(si, "mapping_virtual_to_final", {}))
+            print(f"Lab ID  :", getattr(si, "lab_id", ""))
+            print(f"Task ID  :", getattr(si, "query_id", ""))
+            print(f"Machine  :", getattr(si, "machine", ""))
+            print(f"Shots  :", getattr(si, "num_shots", ""))
+            print(f"Mapping  :", getattr(si, "mapping_virtual_to_final", {}))
         else:
-            print(f"任务ID     :", getattr(si, "query_id", "unknown"))
-            print(f"shots 数量 :", getattr(si, "num_shots", 0))
+            print(f"Task ID  :", getattr(si, "query_id", "unknown"))
+            print(f"Shots  :", getattr(si, "num_shots", 0))
 
         lines = []
         lines.append("\n========== [ Optimize Configs ] ==========")
@@ -151,7 +153,7 @@ class QAOAResult:
         *,
         title: str = "MaxCut Solution (QAOA)",
         n: int,
-        weights: Dict[tuple[int, int], float],
+        weights: dict[tuple[int, int], float],
         choose_ones: bool = True,
         show: bool = True,
     ):
@@ -183,8 +185,8 @@ class QAOAResult:
         cfg_num = theta_num // 2
         gammas = theta[:cfg_num]
         betas = theta[cfg_num:]
-        # gammas = [t % (2*math.pi) for t in gammas]
-        # betas  = [t % math.pi     for t in betas]
+        gammas = np.fmod(gammas, 2 * math.pi)
+        betas = np.fmod(betas, math.pi)
 
         def fmt(xs, prec=3):
             return "[" + ", ".join(f"{x:.{prec}f}" for x in xs) + "]"
@@ -239,8 +241,8 @@ class QAOAResult:
         cfg_num = theta_num // 2
         gammas = theta[:cfg_num]
         betas = theta[cfg_num:]
-        # gammas = [t % (2*math.pi) for t in gammas]
-        # betas  = [t % math.pi     for t in betas]
+        gammas = np.fmod(gammas, 2 * math.pi)
+        betas = np.fmod(betas, math.pi)
 
         def fmt(xs, prec=3):
             return "[" + ", ".join(f"{x:.{prec}f}" for x in xs) + "]"
@@ -266,7 +268,6 @@ class QAOAResult:
         distance,
         n: int,
         vehicle_count: int,
-        positions_per_vehicle: int,
         depot: int = 0,
         title: str = "VRP Solution (QAOA)",
         show: bool = True,
@@ -277,7 +278,6 @@ class QAOAResult:
             distance: Either a square distance matrix (n, n) or coordinates (n, 2).
             n: Number of customers (or locations).
             vehicle_count: Number of vehicles.
-            positions_per_vehicle: Capacity/positions per vehicle (problem dependent).
             depot: Depot index (default 0).
             title: Figure title.
             show: Whether to call ``plt.show()`` inside the decoder (if supported).
@@ -301,8 +301,8 @@ class QAOAResult:
         cfg_num = theta_num // 2
         gammas = theta[:cfg_num]
         betas = theta[cfg_num:]
-        # gammas = [t % (2*math.pi) for t in gammas]
-        # betas  = [t % math.pi     for t in betas]
+        gammas = np.fmod(gammas, 2 * math.pi)
+        betas = np.fmod(betas, math.pi)
 
         def fmt(xs, prec=3):
             return "[" + ", ".join(f"{x:.{prec}f}" for x in xs) + "]"
@@ -317,7 +317,6 @@ class QAOAResult:
             result=self.result_raw,
             n=n,
             vehicle_count=vehicle_count,
-            positions_per_vehicle=positions_per_vehicle,
             depot=depot,
             title=title,
             show=show,
@@ -326,7 +325,7 @@ class QAOAResult:
         return routes
 
     # ====== Serialization ======
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize the result into a plain dictionary."""
         d = asdict(self)
         return d

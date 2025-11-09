@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #

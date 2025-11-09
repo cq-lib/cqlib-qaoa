@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -14,11 +14,10 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Protocol, Any, Dict
+from typing import Callable, Protocol, Any
 
-# ---- Common callable types ----
-Objective = Callable[[List[float]], float]
-Callback = Callable[[List[float], float, int, int], None]
+Objective = Callable[[list[float]], float]
+Callback = Callable[[list[float], float, int, int], None]
 
 
 @dataclass
@@ -35,13 +34,13 @@ class OptimResult:
         history: Optimizer-specific per-iteration records (optional).
     """
 
-    theta_opt: List[float]
+    theta_opt: list[float]
     fun: float
     nfev: int
     nit: int
     converged: bool
     message: str
-    history: List[Dict[str, Any]]
+    history: list[dict[str, Any]]
 
 
 class Optimizer(Protocol):
@@ -53,7 +52,7 @@ class Optimizer(Protocol):
     def minimize(
         self,
         fun: Objective,
-        x0: List[float],
+        x0: list[float],
         *,
-        callback: Optional[Callback] = None,
+        callback: Callback | None = None,
     ) -> OptimResult: ...

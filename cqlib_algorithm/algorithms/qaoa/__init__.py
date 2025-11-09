@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -10,8 +10,22 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""QAOA algorithm API."""
+"""QAOA Algorithm Package.
 
-from .qaoa import QAOASolver, QAOAConfig
+This package provides the core modules for the Quantum Approximate Optimization Algorithm (QAOA).
 
-__all__ = ["QAOASolver", "QAOAConfig"]
+"""
+
+from .qaoa import QAOAConfig, QAOASolver
+from .qaoa_evaluator import QAOAEvaluator
+from .qaoa_minimize import QAOAMinimizer
+from .qaoa_result import QAOAResult
+
+__all__ = [
+    "QAOAConfig", 
+    "QAOASolver",
+    "QAOAEvaluator",
+    "QAOAMinimizer",
+    "QAOAResult",
+]
+

@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,10 +13,9 @@
 """MaxCut problem container."""
 
 from dataclasses import dataclass
-from typing import Dict, Tuple, Optional
 import numpy as np
 
-Edge = Tuple[int, int]
+Edge = tuple[int, int]
 
 
 @dataclass
@@ -37,13 +36,13 @@ class MaxCut:
     """
 
     n: int
-    weights: Optional[Dict[Edge, float]] = None
+    weights: dict[Edge, float] | None = None
 
     # ---- random-instance parameters (used when weights is None) ----
     edge_prob: float = 0.5
-    weight_range: Tuple[float, float] = (1.0, 1.0)
+    weight_range: tuple[float, float] = (1.0, 1.0)
     as_int: bool = True
-    seed: Optional[int] = None
+    seed: int | None = None
     no_isolated: bool = True
 
     def __post_init__(self):
@@ -72,11 +71,11 @@ class MaxCut:
         n: int,
         *,
         edge_prob: float = 0.5,
-        weight_range: Tuple[float, float] = (1.0, 1.0),
+        weight_range: tuple[float, float] = (1.0, 1.0),
         as_int: bool = True,
-        seed: Optional[int] = None,
+        seed: int | None = None,
         no_isolated: bool = True,
-    ) -> Dict[Edge, float]:
+    ) -> dict[Edge, float]:
         """Generate a random undirected weighted graph for MaxCut.
 
         Args:
@@ -99,7 +98,7 @@ class MaxCut:
         low, high = weight_range
         if high <= 0:
             raise ValueError("weight_range upper bound must be > 0")
-        weights: Dict[Edge, float] = {}
+        weights: dict[Edge, float] = {}
 
         # 1) Sample edges independently
         for i in range(n):

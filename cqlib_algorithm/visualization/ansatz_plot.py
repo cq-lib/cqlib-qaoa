@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -17,7 +17,7 @@ This module wraps the cqlib Matplotlib drawer.
 
 from __future__ import annotations
 import matplotlib.pyplot as plt
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Iterable
 import numbers
 
 from cqlib.circuits import Circuit
@@ -45,7 +45,7 @@ def _fmt_angles(xs: Iterable[float], max_len: int = 3) -> str:
     return f"[{head}, …] (len={len(xs)})"
 
 
-def _summary_items(summary: Dict[str, Any]) -> list[tuple[str, str]]:
+def _summary_items(summary: dict[str, Any]) -> list[tuple[str, str]]:
     """Convert a metadata dict into label pairs for the header row.
 
     Args:
@@ -89,8 +89,8 @@ def draw_ansatz(
     circ: Circuit,
     *,
     title: str = "QAOA Ansatz",
-    filename: Optional[str] = None,
-    summary: Optional[Dict[str, Any]] = None,
+    filename: str | None = None,
+    summary: dict[str, Any] | None = None,
     show: bool = True,
     angle_decimals: int = 1,
 ):

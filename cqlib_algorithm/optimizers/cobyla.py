@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,7 +13,7 @@
 """SciPy-backed COBYLA optimizer wrapper with per-iteration history."""
 
 from __future__ import annotations
-from typing import List, Optional, Sequence, Any
+from typing import Sequence, Any
 import numpy as np
 
 try:
@@ -25,7 +25,7 @@ from cqlib_algorithm.optimizers.base import Optimizer, OptimResult, Objective, C
 from cqlib_algorithm.optimizers.options import OptimizerOptions
 
 
-def _to_list(x: Sequence[float]) -> List[float]:
+def _to_list(x: Sequence[float]) -> list[float]:
     """Convert a numeric sequence (e.g., ndarray) to a Python list.
 
     Args:
@@ -51,10 +51,6 @@ class COBYLA(Optimizer):
           inequality constraints internally (since COBYLA has no native bounds).
         - ``constraints``: SciPy-style constraints
           (``LinearConstraint`` / ``NonlinearConstraint`` / ``dict`` or list thereof).
-
-    Notes:
-        - A per-iteration history is recorded using the SciPy callback hook
-          (it triggers an additional evaluation of the objective at each callback).
     """
 
     def __init__(self, cfg: OptimizerOptions):
@@ -67,13 +63,13 @@ class COBYLA(Optimizer):
         opts = cfg.options
         self.maxiter: int = int(opts.get("maxiter", 1000))
         self.rhobeg: float = float(opts.get("rhobeg", 1.0))
-        self.tol: Optional[float] = (
+        self.tol: float | None = (
             float(opts["rhoend"])
             if "rhoend" in opts
-            else (float(opts["tol"]) if "tol" in opts else None)
+            else (float(opts["tol"]) if "tol" in opts else 0.0)
         )
-        self.catol: Optional[float] = float(opts.get("catol", 2e-4))
-        self.f_target: Optional[float] = (
+        self.catol: float | None = float(opts.get("catol", 2e-4))
+        self.f_target: float | None = (
             float(opts.get("f_target", None)) if "f_target" in opts else None
         )
         self.disp: int = int(opts.get("disp", 0))
@@ -91,7 +87,7 @@ class COBYLA(Optimizer):
             n: Number of variables.
 
         Returns:
-            list[dict]: List of SciPy-style inequality constraints.
+            list[dict]: list of SciPy-style inequality constraints.
         """
         if not self.bounds:
             return []
@@ -106,10 +102,10 @@ class COBYLA(Optimizer):
     def minimize(
         self,
         fun: Objective,
-        x0: List[float],
+        x0: list[float],
         *,
         constraints: Any = None,
-        callback: Optional[Callback] = None,
+        callback: Callback | None = None,
     ) -> OptimResult:
         """Minimize an objective with COBYLA.
 
@@ -118,8 +114,7 @@ class COBYLA(Optimizer):
             x0: Initial parameter vector.
             constraints: Optional SciPy-style constraints to merge with configured ones.
             callback: Optional per-iteration callback; called as
-                ``callback(theta, fval, iter, nfev)``. Here ``nfev`` is set to ``-1``
-                since SciPy's callback does not expose it.
+                ``callback(theta, fval, iter, nfev)``. Here ``nfev`` is set to ``-1``.
 
         Returns:
             OptimResult: Summary of the optimization run, including per-iteration history.
@@ -127,19 +122,21 @@ class COBYLA(Optimizer):
         x0 = np.asarray(x0, dtype=float)
         history: list[dict[str, Any]] = []
 
-        # Objective wrapper to ensure list input
         def _obj(x: np.ndarray) -> float:
             return float(fun(_to_list(x)))
-
-        # SciPy callback wrapper: record and optionally forward to user callback
+        
+        seen_any = False
         def _cb(xk: np.ndarray):
+            nonlocal seen_any
+            if not seen_any:
+                seen_any = True
+                return
             fk = _obj(xk)
             rec = {"iter": len(history) + 1, "x": _to_list(xk), "fun": fk}
             history.append(rec)
             if callback is not None:
                 callback(_to_list(xk), fk, rec["iter"], -1)
 
-        # Merge configured constraints + bounds + on-call constraints
         cons_list: list = []
         if self.cfg_constraints is not None:
             if isinstance(self.cfg_constraints, (list, tuple)):
@@ -154,7 +151,6 @@ class COBYLA(Optimizer):
             else:
                 cons_list.append(constraints)
 
-        # SciPy options
         options = {
             "rhobeg": self.rhobeg,
             "maxiter": self.maxiter,

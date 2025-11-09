@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -10,4 +10,20 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Problems."""
+"""Problems Module.
+
+This package provides built-in combinatorial optimization problem templates
+commonly used in quantum-classical hybrid algorithms.
+
+"""
+
+from .maxcut import MaxCut
+from .tsp import TSP
+from .vrp import VRP
+
+__all__ = [
+    "MaxCut",
+    "TSP",
+    "VRP",
+]
+

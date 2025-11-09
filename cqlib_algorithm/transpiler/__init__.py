@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -10,4 +10,20 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Transpiler."""
+"""Transpiler Module.
+
+This package provides circuit decomposition utilities used by cqlib.
+
+"""
+
+from .builders import (
+    rzz_via_cnot,
+    rxx_via_cnot,
+    ryy_via_cnot,
+)
+
+__all__ = [
+    "rzz_via_cnot",
+    "rxx_via_cnot",
+    "ryy_via_cnot",
+]

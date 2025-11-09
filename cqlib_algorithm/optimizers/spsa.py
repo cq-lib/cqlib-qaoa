@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,7 +13,6 @@
 """SPSA optimizer (Simultaneous Perturbation Stochastic Approximation)."""
 
 from __future__ import annotations
-from typing import List, Optional
 import random
 
 from cqlib_algorithm.optimizers.base import Optimizer, OptimResult, Objective, Callback
@@ -28,11 +27,6 @@ class SPSA(Optimizer):
         - ``a`` (float): Learning-rate base.
         - ``c`` (float): Perturbation base.
         - ``seed`` (int | None): RNG seed for reproducibility.
-
-    Notes:
-        - Two objective evaluations are used to estimate the gradient at each step
-          (plus one to evaluate the updated point), so the total evaluations are
-          roughly ``1 + 3 * maxiter``.
     """
 
     def __init__(self, cfg: OptimizerOptions):
@@ -50,7 +44,7 @@ class SPSA(Optimizer):
         if self.seed is not None:
             random.seed(self.seed)
 
-    def _perturb(self, x: List[float], ck: float):
+    def _perturb(self, x: list[float], ck: float):
         """Generate ± perturbations along a Rademacher vector.
 
         Args:
@@ -71,9 +65,9 @@ class SPSA(Optimizer):
     def minimize(
         self,
         fun: Objective,
-        x0: List[float],
+        x0: list[float],
         *,
-        callback: Optional[Callback] = None,
+        callback: Callback | None = None,
     ) -> OptimResult:
         """Run SPSA to minimize a scalar objective.
 
@@ -101,11 +95,7 @@ class SPSA(Optimizer):
             nfev += 1
             f_minus = fun(x_minus)
             nfev += 1
-
-            # SPSA gradient estimate
             gk = [(f_plus - f_minus) / (2.0 * ck * di) for di in delta]
-
-            # Parameter update
             x = [xi - ak * gi for xi, gi in zip(x, gk)]
             f_cur = fun(x)
             nfev += 1

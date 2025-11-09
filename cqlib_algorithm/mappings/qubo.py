@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -56,32 +56,25 @@ class QUBO:
         """Print as a single-line objective docplex pretty output."""
         terms = []
 
-        # Quadratic terms (print each pair once, i<j)
         for i in range(self.n):
             for j in range(i + 1, self.n):
-                coef = self.Q[i, j] + self.Q[j, i]  # equals 2*Q[i,j] if Q is symmetric
+                coef = self.Q[i, j] + self.Q[j, i]
                 if abs(coef) > zero_tol:
                     terms.append((coef, f"x_{i}*x_{j}"))
 
-        # Linear terms: diagonal contributes as x_i (since x_i^2 = x_i), plus c[i]
         for i in range(self.n):
             lin_coef = self.Q[i, i] + self.c[i]
             if abs(lin_coef) > zero_tol:
                 terms.append((lin_coef, f"x_{i}"))
 
-        # Constant term
         const = float(self.offset)
 
-        # Build expression string with signs
         def fmt_coef(v: float) -> str:
-            # avoid printing "-0.000..."
             v = 0.0 if abs(v) <= zero_tol else v
-            # integer-like?
             if abs(v - round(v)) <= 10 ** (-precision):
                 return str(int(round(v)))
             return f"{v:.{max(0, min(precision, 12))}g}"
 
-        # Sort terms: quadratics first, then linear (purely cosmetic)
         quad = [(c, s) for (c, s) in terms if "*x_" in s]
         lin = [(c, s) for (c, s) in terms if "*x_" not in s]
         ordered = quad + lin
@@ -93,7 +86,6 @@ class QUBO:
             piece = ("" if k == 0 and coef >= 0 else sign) + f"{mag}*{sym}"
             expr_parts.append(piece)
 
-        # Constant
         if abs(const) > zero_tol or not expr_parts:
             sign = " + " if const >= 0 else " - "
             mag = fmt_coef(abs(const))

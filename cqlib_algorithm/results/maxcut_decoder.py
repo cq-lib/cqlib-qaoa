@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,7 +13,6 @@
 """MaxCut decoder."""
 
 from __future__ import annotations
-from typing import Dict, Tuple, List, Optional
 import matplotlib.pyplot as plt
 
 from cqlib_algorithm.results.utils import parse_probability
@@ -22,11 +21,11 @@ from cqlib_algorithm.execution.objective import energy_of_bitstring
 from cqlib_algorithm.mappings.hamiltonian import IsingHamiltonian
 
 
-Edge = Tuple[int, int]
+Edge = tuple[int, int]
 
 
 def best_bitstring_from_probability(
-    prob: Dict[str, float] | str, ising: IsingHamiltonian
+    prob: dict[str, float] | str, ising: IsingHamiltonian
 ) -> str:
     """Select the lowest-energy bitstring under an Ising Hamiltonian.
 
@@ -47,8 +46,8 @@ def best_bitstring_from_probability(
 
 
 def decode_from_platform_result(
-    result: Dict, n: int, *, choose_ones: bool = True, ising: IsingHamiltonian
-) -> Tuple[str, str, List[int]]:
+    result: dict, n: int, *, choose_ones: bool = True, ising: IsingHamiltonian
+) -> tuple[str, str, list[int]]:
     """Decode a MaxCut partition from a platform result payload.
 
     Picks the best bitstring (minimum Ising energy) and derives the partition.
@@ -61,7 +60,7 @@ def decode_from_platform_result(
         ising: Ising Hamiltonian used to score bitstrings.
 
     Returns:
-        Tuple[str, str, list[int]]:
+        tuple[str, str, list[int]]:
             - ``best_raw``: Best bitstring in platform order.
             - ``best_std``: Best bitstring in standard order (here same as raw).
             - ``partition``: Indices in the selected side of the cut.
@@ -70,7 +69,7 @@ def decode_from_platform_result(
     best_raw = best_bitstring_from_probability(prob, ising)
     print("Best Qubit string: ", best_raw)
 
-    part: List[int] = []
+    part: list[int] = []
     for i, b in enumerate(best_raw):
         if (b == "1") == choose_ones:
             part.append(i)
@@ -79,15 +78,15 @@ def decode_from_platform_result(
 
 def plot_maxcut_solution(
     n: int,
-    weights: Dict[Edge, float],
-    result: Dict,
+    weights: dict[Edge, float],
+    result: dict,
     *,
     choose_ones: bool = True,
     title: str = "MaxCut Solution(QAOA)",
-    pos: Optional[Dict[int, Tuple[float, float]]] = None,
+    pos: dict[int, tuple[float, float]] | None = None,
     show: bool = True,
     ising: IsingHamiltonian,
-) -> List[int]:
+) -> list[int]:
     """Visualize a MaxCut solution decoded from the platform result.
 
     Args:
@@ -108,7 +107,6 @@ def plot_maxcut_solution(
     )
     print("Best solution:", part)
 
-    # Compute cut value for the chosen bitstring
     cut_value = 0.0
     for (i, j), w in weights.items():
         ii, jj = (i, j) if i < j else (j, i)

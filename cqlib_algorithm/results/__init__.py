@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -10,22 +10,18 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Results utilities public API.
+"""Results Module.
 
-Exports problem decoding.
+This package provides solution decoding and result analysis utilities.
+
 """
 
-from cqlib_algorithm.results.utils import parse_probability, topk_items
-from cqlib_algorithm.results.maxcut_decoder import (
-    best_bitstring_from_probability,
-    decode_from_platform_result,
-    plot_maxcut_solution,
-)
+from .maxcut_decoder import plot_maxcut_solution
+from .tsp_decoder import plot_tsp_solution
+from .vrp_decoder import plot_vrp_solution
 
 __all__ = [
-    "parse_probability",
-    "topk_items",
-    "best_bitstring_from_probability",
-    "decode_from_platform_result",
     "plot_maxcut_solution",
+    "plot_tsp_solution",
+    "plot_vrp_solution",
 ]

@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -12,14 +12,14 @@
 
 """TianYanRunner.
 
-This module provides a thin wrapper around the China Telecom "TianYan" platform
-for submitting quantum circuits, handling (optional) topology-aware transpilation,
-and retrieving execution results.
+This module provides a wrapper around the China Telecom “TianYan” Quantum 
+Computing Cloud Platform for submitting quantum circuits, handling (optional) 
+topology-aware transpilation, and retrieving execution results.
 """
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, Tuple
+from typing import Any
 from datetime import datetime
 
 from cqlib import TianYanPlatform
@@ -49,10 +49,10 @@ class SubmitResult:
     exp_name: str
     machine: str
     num_shots: int
-    mapping_virtual_to_final: Optional[Dict[int, int]] = None
-    initial_layout: Optional[Any] = None
-    swap_mapping: Optional[Any] = None
-    used_circuit: Optional[Circuit] = None
+    mapping_virtual_to_final: dict[int, int] | None = None
+    initial_layout: Any | None = None
+    swap_mapping: Any | None = None
+    used_circuit: Circuit | None = None
 
 
 class TianYanRunner:
@@ -71,7 +71,7 @@ class TianYanRunner:
         ValueError: If ``login_key`` is not provided.
     """
 
-    def __init__(self, login_key: Optional[str] = None, machine: str = "tianyan_sw"):
+    def __init__(self, login_key: str | None = None, machine: str = "tianyan_sw"):
         self.login_key = login_key
         if not self.login_key:
             raise ValueError("Missing login key: please provide `login_key`.")
@@ -85,11 +85,11 @@ class TianYanRunner:
         circuit: Circuit,
         *,
         num_shots: int = 1000,
-        exp_name: Optional[str] = None,
-        lab_id: Optional[int] = None,
+        exp_name: str | None = None,
+        lab_id: int | None = None,
         create_lab_if_missing: bool = True,
-        need_transpile: Optional[bool] = None,
-    ) -> Tuple[SubmitResult, Dict]:
+        need_transpile: bool | None = None,
+    ) -> tuple[SubmitResult, dict]:
         """Submit a circuit and return (submission info, single-experiment result).
 
         For simulators, the method directly submits ``circuit.qcis``.
@@ -105,7 +105,7 @@ class TianYanRunner:
                 from the backend name (real hardware requires transpilation).
 
         Returns:
-            Tuple[SubmitResult, Dict[str, Any]]: Submission metadata and a single result dict
+            tuple[SubmitResult, dict[str, Any]]: Submission metadata and a single result dict
             as returned by the platform (e.g., includes ``"probability"``).
 
         Raises:
@@ -179,11 +179,11 @@ class TianYanRunner:
             Expects ``result["probability"]`` to be a mapping ``bitstring -> probability``.
         """
         print("\n========== [ Experiment Information ] ==========")
-        print(f"实验集ID   :", submit_info.lab_id)
-        print(f"任务ID     :", submit_info.query_id)
-        print(f"机器选择   :", submit_info.machine)
-        print(f"shots 数量 :", submit_info.num_shots)
-        print(f"拓扑映射   :", submit_info.mapping_virtual_to_final)
+        print(f"Lab ID  :", submit_info.lab_id)
+        print(f"Task ID  :", submit_info.query_id)
+        print(f"Machine  :", submit_info.machine)
+        print(f"Shots  :", submit_info.num_shots)
+        print(f"Mapping  :", submit_info.mapping_virtual_to_final)
 
         print("\n========== [ Measurement Results ] ==========")
         for k, v in result.items():

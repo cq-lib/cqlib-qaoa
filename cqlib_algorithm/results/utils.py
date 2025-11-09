@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -14,10 +14,9 @@
 
 from __future__ import annotations
 import json
-from typing import Dict, List, Tuple
 
 
-def parse_probability(prob: Dict[str, float] | str) -> Dict[str, float]:
+def parse_probability(prob: dict[str, float] | str) -> dict[str, float]:
     """Normalize a probability map possibly provided as JSON.
 
     Args:
@@ -32,7 +31,7 @@ def parse_probability(prob: Dict[str, float] | str) -> Dict[str, float]:
     return prob
 
 
-def topk_items(d: Dict[str, float], k: int) -> List[Tuple[str, float]]:
+def topk_items(d: dict[str, float], k: int) -> list[tuple[str, float]]:
     """Return the top-k items by value in descending order.
 
     Args:

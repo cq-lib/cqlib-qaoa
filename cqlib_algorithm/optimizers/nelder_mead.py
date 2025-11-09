@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,7 +13,6 @@
 """Pure-Python Nelder–Mead optimizer with per-iteration callback/history."""
 
 from __future__ import annotations
-from typing import List, Optional
 import math
 
 from cqlib_algorithm.optimizers.base import Optimizer, OptimResult, Objective, Callback
@@ -35,11 +34,6 @@ class NelderMead(Optimizer):
           the function is considered stable.
         - ``xtol`` (float): Simplex size tolerance. If the simplex diameter is below
           this threshold, the shape/scale is considered stable.
-
-    Notes:
-        - This implementation is intentionally simple and self-contained; it does not
-          use SciPy. It records a history of the best point per iteration and supports
-          a user callback.
     """
 
     def __init__(self, cfg: OptimizerOptions):
@@ -56,11 +50,11 @@ class NelderMead(Optimizer):
         self.gamma = float(opts.get("gamma", 2.0))
         self.rho = float(opts.get("rho", 0.5))
         self.sigma = float(opts.get("sigma", 0.5))
-        self.ftol = float(opts.get("ftol", 1e-6))
+        self.ftol = float(opts.get("ftol", 1e-12))
         self.xtol = float(opts.get("xtol", 1e-6))
 
     # --- helpers ---
-    def _build_initial_simplex(self, x0: List[float]) -> List[List[float]]:
+    def _build_initial_simplex(self, x0: list[float]) -> list[list[float]]:
         """Create an initial (n+1)-vertex simplex around ``x0``.
 
         If ``initial_step`` is a scalar, the same step is applied to each coordinate.
@@ -86,7 +80,7 @@ class NelderMead(Optimizer):
             simplex.append(v)
         return simplex
 
-    def _centroid(self, verts: List[List[float]], exclude_idx: int) -> List[float]:
+    def _centroid(self, verts: list[list[float]], exclude_idx: int) -> list[float]:
         """Compute the centroid of all vertices except the one at ``exclude_idx``."""
         n = len(verts[0])
         m = len(verts) - 1
@@ -98,25 +92,29 @@ class NelderMead(Optimizer):
                 c[i] += v[i]
         return [ci / m for ci in c]
 
-    def _lin_comb(self, a: List[float], b: List[float], t: float) -> List[float]:
+    def _lin_comb(self, a: list[float], b: list[float], t: float) -> list[float]:
         """Return the linear combination ``a + t*(b - a)``."""
         return [ai + t * (bi - ai) for ai, bi in zip(a, b)]
 
-    def _simplex_size(self, verts: List[List[float]]) -> float:
-        """Approximate simplex diameter as the max distance from best to others."""
+    def _simplex_size(self, verts):
         best = verts[0]
-
         def dist(u, v):
-            return math.sqrt(sum((ui - vi) ** 2 for ui, vi in zip(u, v)))
-
+            s = 0.0
+            for ui, vi in zip(u, v):
+                if getattr(self, "wrap_angles", False):
+                    d = (abs(ui - vi)) % (2*math.pi)
+                else:
+                    d = abs(ui - vi)
+                s += d*d
+            return math.sqrt(s)
         return max(dist(best, v) for v in verts[1:])
 
     def minimize(
         self,
         fun: Objective,
-        x0: List[float],
+        x0: list[float],
         *,
-        callback: Optional[Callback] = None,
+        callback: Callback | None = None,
     ) -> OptimResult:
         """Minimize the objective starting from ``x0`` using Nelder–Mead.
 
@@ -132,6 +130,15 @@ class NelderMead(Optimizer):
             (set to True when the loop exits, including tolerance/budget),
             a message, and the per-iteration history (best point and value).
         """
+        n = len(x0)
+        opts = self.cfg.options
+        if "gamma" not in opts:
+             self.gamma = 1.0 + 2.0 / n
+        if "rho" not in opts:
+             self.rho = 0.75 - 1.0 / (2.0 * n)
+        if "sigma" not in opts:
+             self.sigma = 1.0 - 1.0 / n
+
         simplex = self._build_initial_simplex(list(x0))
         fvals = [fun(v) for v in simplex]
         nfev = len(fvals)
@@ -148,18 +155,15 @@ class NelderMead(Optimizer):
             worst_x, worst_f = simplex[-1], fvals[-1]
             second_worst_f = fvals[-2]
 
-            # Record history & user callback (using current best)
             history.append({"iter": it, "x": list(best_x), "fun": best_f})
             if callback:
                 callback(list(best_x), best_f, it, nfev)
 
-            # Convergence criteria: function spread and simplex size
             fspread = max(abs(fi - best_f) for fi in fvals)
             size = self._simplex_size(simplex)
             if fspread < self.ftol and size < self.xtol:
                 break
 
-            # Centroid excluding the worst vertex
             c = self._centroid(simplex, exclude_idx=len(simplex) - 1)
 
             # 1) Reflection: xr = c + alpha*(c - x_worst)
@@ -179,13 +183,11 @@ class NelderMead(Optimizer):
                 continue
 
             if fr < second_worst_f:
-                # Reflection better than second worst → accept reflection
                 simplex[-1], fvals[-1] = xr, fr
                 continue
 
             # 3) Contraction
             if fr < worst_f:
-                # Outside contraction: xco = c + rho*(xr - c)
                 xco = self._lin_comb(c, xr, self.rho)
                 fco = fun(xco)
                 nfev += 1
@@ -193,7 +195,6 @@ class NelderMead(Optimizer):
                     simplex[-1], fvals[-1] = xco, fco
                     continue
             else:
-                # Inside contraction: xci = c - rho*(xw - c)
                 xci = self._lin_comb(c, worst_x, -self.rho)
                 fci = fun(xci)
                 nfev += 1

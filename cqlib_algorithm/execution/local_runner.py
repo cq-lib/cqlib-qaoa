@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -20,7 +20,7 @@ metadata alongside results.
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Dict, Any, Tuple
+from typing import Any
 from datetime import datetime
 
 from cqlib.simulator.statevector_simulator import StatevectorSimulator
@@ -58,7 +58,7 @@ class LocalRunner:
             return len(circ.qubits)
         return 0
 
-    def _identity_mapping(self, n: int) -> Dict[int, int]:
+    def _identity_mapping(self, n: int) -> dict[int, int]:
         """Return an identity virtual-to-physical qubit mapping.
 
         Args:
@@ -74,7 +74,7 @@ class LocalRunner:
         circ: Any,
         *,
         num_shots: int = 1000,
-    ) -> Tuple[SubmitResult, Dict]:
+    ) -> tuple[SubmitResult, dict]:
         """Execute a circuit locally and return normalized probabilities.
 
         Args:
@@ -83,7 +83,7 @@ class LocalRunner:
             num_shots: Number of measurement shots for sampling.
 
         Returns:
-            Tuple[SubmitResult, dict]: A pair of
+            tuple[SubmitResult, dict]: A pair of
                 - :class:`SubmitResult` with submission metadata.
                 - Result dict containing:
                     * ``"probability"``: ``{bitstring: probability}`` sorted by
@@ -116,14 +116,13 @@ class LocalRunner:
             topk: Number of top probability entries to visualize in the bar chart.
         """
         print("\n========== [ Experiment Information ] ==========")
-        print(f"任务ID     :", submit_info.query_id)
-        print(f"shots 数量 :", submit_info.num_shots)
+        print(f"Task ID  :", submit_info.query_id)
+        print(f"Shots  :", submit_info.num_shots)
 
         print("\n========== [ Measurement Results ] ==========")
         for k, v in result.items():
             print(k, ":", v)
 
-        # Probability bar chart
         result_topk = topk
         probs = result["probability"]
         draw_probability(

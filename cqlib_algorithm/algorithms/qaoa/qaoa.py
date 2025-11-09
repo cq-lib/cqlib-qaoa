@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -14,11 +14,11 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, asdict
-from typing import Optional, Dict, Any, List
+from typing import Any
 import math
 
 from cqlib_algorithm.mappings.hamiltonian import IsingHamiltonian
-from cqlib_algorithm.ansatz.qaoa_ansatz.qaoa_ansatz import build_qaoa_circuit
+from cqlib_algorithm.ansatz.qaoa_ansatz import build_qaoa_circuit
 from cqlib_algorithm.execution import LocalRunner, TianYanRunner
 from cqlib_algorithm.algorithms.qaoa.qaoa_evaluator import QAOAEvaluator
 from cqlib_algorithm.algorithms.qaoa.qaoa_minimize import QAOAMinimizer
@@ -47,7 +47,7 @@ class QAOAConfig:
     shots: int = 1000
     name: str = "QAOA"
     wrap_angles: bool = True
-    need_transpile: Optional[bool] = None
+    need_transpile: bool | None = None
     verbose: bool = True
 
 
@@ -59,8 +59,8 @@ class QAOASolver:
         ising: IsingHamiltonian,
         *,
         runner=None,
-        qaoa_cfg: Optional[QAOAConfig] = None,
-        opt_cfg: Optional[OptimizerOptions] = None,
+        qaoa_cfg: QAOAConfig | None = None,
+        opt_cfg: OptimizerOptions | None = None,
     ):
         """Initialize the solver with problem, backend, and configs.
 
@@ -92,11 +92,11 @@ class QAOASolver:
         )
 
     @staticmethod
-    def default_theta(p: int, gamma: float = 0.8, beta: float = 0.2) -> List[float]:
+    def default_theta(p: int, gamma: float = 0.8, beta: float = 0.2) -> list[float]:
         """Build a flat initial parameter vector ``[gammas..., betas...]`` of length ``2p``."""
         return [gamma] * p + [beta] * p
 
-    def _build_circuit_for_theta(self, theta: List[float]):
+    def _build_circuit_for_theta(self, theta: list[float]):
         """Construct a QAOA circuit for a given parameter vector.
 
         The evaluator's current configuration is used (depth, mixer, naming, etc.).
@@ -121,8 +121,6 @@ class QAOASolver:
         assert len(theta) == 2 * reps, "theta must be of length 2*reps"
         gammas = list(theta[:reps])
         betas = list(theta[reps:])
-        # gammas = [t % (2*math.pi) for t in gammas]
-        # betas  = [t % math.pi     for t in betas]
 
         if getattr(self, "wrap_angles", False):
             gammas = [t % (2 * math.pi) for t in gammas]
@@ -145,12 +143,12 @@ class QAOASolver:
     # ------- Run entrypoint -------
     def run(
         self,
-        initial_theta: Optional[List[float]] = None,
+        initial_theta: list[float] | None = None,
         *,
-        need_transpile: Optional[bool] = None,
-        verbose: Optional[bool] = None,
+        need_transpile: bool | None = None,
+        verbose: bool | None = None,
         post_eval: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Optimize parameters and optionally re-sample at the optimum.
 
         Args:

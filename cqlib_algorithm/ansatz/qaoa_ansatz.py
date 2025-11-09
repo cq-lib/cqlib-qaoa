@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -17,17 +17,17 @@ This module provides a builder for QAOA circuits using an Ising cost Hamiltonian
 It relies on a minimal :class:`Circuit` interface from ``cqlib.circuits``.
 """
 
-from typing import Dict, Tuple, List, Callable, Optional, Union
+from typing import Callable
 
 from cqlib.circuits import Circuit
 from cqlib_algorithm.transpiler.builders import rzz_via_cnot, rxx_via_cnot, ryy_via_cnot
 
-Edge = Tuple[int, int]
-MixerFn = Callable[[Circuit, List[int], float], None]
-InitFn = Callable[[Circuit, List[int]], None]
+Edge = tuple[int, int]
+MixerFn = Callable[[Circuit, list[int], float], None]
+InitFn = Callable[[Circuit, list[int]], None]
 
 
-def prepare_plus_state(circ: Circuit, qubits: List[int]):
+def prepare_plus_state(circ: Circuit, qubits: list[int]):
     """Prepare the |+>^n state on the specified qubits.
 
     Args:
@@ -42,7 +42,7 @@ def prepare_plus_state(circ: Circuit, qubits: List[int]):
 
 
 def build_cost_layer(
-    circ: Circuit, h: Dict[int, float], J: Dict[Edge, float], gamma: float
+    circ: Circuit, h: dict[int, float], J: dict[Edge, float], gamma: float
 ):
     """Apply the Ising cost layer U_C(gamma).
 
@@ -67,7 +67,7 @@ def build_cost_layer(
             rzz_via_cnot(circ, i, j, 2.0 * gamma * w)
 
 
-def mixer_x(circ: Circuit, qubits: List[int], beta: float):
+def mixer_x(circ: Circuit, qubits: list[int], beta: float):
     """Apply a global X mixer layer U_M(beta).
 
     Args:
@@ -79,21 +79,21 @@ def mixer_x(circ: Circuit, qubits: List[int], beta: float):
         circ.rx(q, 2.0 * beta)
 
 
-def _ring_edges(qubits: List[int]) -> List[Edge]:
+def _ring_edges(qubits: list[int]) -> list[Edge]:
     """Generate ring connectivity over the given qubits.
 
     Args:
         qubits: Ordered list of qubit indices.
 
     Returns:
-        List[Edge]: Edges connecting (q_k, q_{k+1}) with wrap-around.
+        list[Edge]: Edges connecting (q_k, q_{k+1}) with wrap-around.
     """
     if len(qubits) < 2:
         return []
     return [(qubits[k], qubits[(k + 1) % len(qubits)]) for k in range(len(qubits))]
 
 
-def mixer_xy(circ: Circuit, qubits: List[int], beta: float) -> None:
+def mixer_xy(circ: Circuit, qubits: list[int], beta: float) -> None:
     """Apply an XY mixer over a ring: for each edge, RXX(2*beta) then RYY(2*beta).
 
     The internal connectivity is fixed to a ring:
@@ -115,14 +115,14 @@ def mixer_xy(circ: Circuit, qubits: List[int], beta: float) -> None:
 
 def build_qaoa_circuit(
     n: int,
-    h: Dict[int, float],
-    J: Dict[Edge, float],
+    h: dict[int, float],
+    J: dict[Edge, float],
     # *,
     reps: int = 1,
-    betas: Optional[List[float]] = None,
-    gammas: Optional[List[float]] = None,
-    mixer_operator: Optional[Union[str, MixerFn]] = None,
-    initial_state: Optional[Union[str, InitFn, Circuit]] = None,
+    betas: list[float] | None = None,
+    gammas: list[float] | None = None,
+    mixer_operator: str | MixerFn | None = None,
+    initial_state: str | InitFn | Circuit | None = None,
     insert_barriers: bool = False,
     name: str = "QAOA_ansatz",
 ) -> Circuit:
@@ -165,14 +165,6 @@ def build_qaoa_circuit(
         "betas/gammas must be length `reps`"
     )
 
-    # # Print ansatz configs
-    # print(f"[QAOA_ansatz]")
-    # print(f"  name: {name}")
-    # print(f"  qubits: {n}")
-    # print(f"  reps: {reps}")
-    # print(f"  betas: {betas}")
-    # print(f"  gammas: {gammas}")
-
     # Initial state selection
     init_fn: InitFn
     if initial_state is None or initial_state == "plus":
@@ -181,7 +173,7 @@ def build_qaoa_circuit(
     elif isinstance(initial_state, Circuit):
         init_circ = initial_state
 
-        def _append_existing(c: Circuit, qubits: List[int]) -> None:
+        def _append_existing(c: Circuit, qubits: list[int]) -> None:
             for method in ("compose", "extend", "append_circuit"):
                 if hasattr(c, method):
                     try:

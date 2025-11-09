@@ -1,4 +1,4 @@
-# This code is part of cqlib-algorithm.
+# This code is part of cqlib.
 #
 # Copyright (C) 2025 China Telecom Quantum Group.
 #
@@ -13,7 +13,6 @@
 """Expectation utilities for Ising Hamiltonians."""
 
 from __future__ import annotations
-from typing import Dict
 import json
 
 from cqlib_algorithm.mappings.hamiltonian import IsingHamiltonian
@@ -47,16 +46,14 @@ def energy_of_bitstring(ising: IsingHamiltonian, bitstr: str) -> float:
     """
     s = _spin_from_bitstring(bitstr)
     e = 0.0
-    # Linear terms
     for i, hi in ising.h.items():
         e += hi * s[i]
-    # Pairwise terms
     for (i, j), Jij in ising.J.items():
         e += Jij * s[i] * s[j]
     return e
 
 
-def parse_probability(prob: Dict[str, float] | str) -> Dict[str, float]:
+def parse_probability(prob: dict[str, float] | str) -> dict[str, float]:
     """Normalize probability input to a dictionary.
 
     Args:
@@ -78,7 +75,7 @@ def parse_probability(prob: Dict[str, float] | str) -> Dict[str, float]:
 
 
 def expectation_from_probability(
-    ising: IsingHamiltonian, prob: Dict[str, float] | str
+    ising: IsingHamiltonian, prob: dict[str, float] | str
 ) -> float:
     """Compute expected Ising energy from a probability distribution.
 
