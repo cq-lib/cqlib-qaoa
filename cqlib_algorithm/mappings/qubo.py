@@ -32,6 +32,7 @@ class QUBO:
     Q: np.ndarray
     c: np.ndarray
     offset: float = 0.0
+    sense: str = "min"
 
     def __post_init__(self):
         """Normalize internal arrays and symmetrize ``Q``."""

@@ -1,39 +1,42 @@
 # Cqlib Algorithm
 
-This project is a quantum algorithm package based on **[Cqlib](https://gitee.com/cq-lib/cqlib)**, created by the development team of China Telecom Quantum Group. It includes functions such as creating new optimization tasks, generating Hamiltonians, creating quantum circuits, executing quantum circuits, measuring and sampling, and returning optimization results. Currently, QAOA has been implemented, and quantum algorithms such as VQE will continue to be integrated in the future.
+This project is a QAOA quantum algorithm package based on **[Cqlib](https://github.com/cq-lib)**, created by the development team of China Telecom Quantum Group. It includes functions such as creating new optimization tasks, generating Hamiltonians, creating quantum circuits, executing quantum circuits, measuring and sampling, and returning optimization results. 
 
 ---
 
 ## Installation
 
-Install the package using pip:
+Requirements: Python 3.10 or later.
+
+Install `cqlib-algorithm` using pip:
 
 ```bash
 pip install cqlib-algorithm
 ```
 
-## Structures
+## Package Structure
 
 - **algorithms**: Core algorithm module. Includes QAOA main loop, energy evaluation, and optimization results.
 - **ansatz**: Quantum circuit builders. Includes QAOA-specific circuit generation.
 - **execution**: Execution backends. Includes LocalRunner (statevector simulator) and TianYanRunner (**[China Telecom “TianYan” quantum cloud platform](https://qc.zdxlz.com)**).
 - **mappings**: Problem mappings. Includes QUBO conversion and cost-Hamiltonian generation.
 - **optimizers**: Optimizers: `SPSA` / `COBYLA` / `Nelder-Mead`.
-- **problems**: roblem definitions for `MaxCut` / `TSP` / `VRP`.
+- **problems**: Problem definitions for `MaxCut` / `TSP` / `VRP`.
 - **results**: Result decoding for `MaxCut` / `TSP` / `VRP`.
-- **visualization**: Visualization of circuits, optimization history, probability distributions, and problem graphs.
+- **transpiler**: Circuit decomposition utilities for two-qubit rotations such as RZZ, RXX, and RYY.
+- **visualization**: Visualization of optimization history, probability distributions, and problem graphs.
 
 ---
 
 ## Example: Solve MaxCut with QAOA
 
 ```python
-from cqlib_algorithm.problems.maxcut import MaxCut
-from cqlib_algorithm.mappings.convert import maxcut_to_qubo, qubo_to_ising
-from cqlib_algorithm.visualization.maxcut_plot import plot_maxcut
-from cqlib_algorithm.execution import LocalRunner, TianYanRunner
-from cqlib_algorithm.algorithms.qaoa import QAOASolver, QAOAConfig
-from cqlib_algorithm.optimizers.options import OptimizerOptions
+from cqlib_algorithm.problems import MaxCut
+from cqlib_algorithm.mappings import maxcut_to_qubo, qubo_to_ising
+from cqlib_algorithm.visualization import plot_maxcut
+from cqlib_algorithm.execution import LocalRunner
+from cqlib_algorithm.algorithms import QAOASolver, QAOAConfig
+from cqlib_algorithm.optimizers import OptimizerOptions
 
 def main():
     # 1) MaxCut instance
@@ -79,6 +82,14 @@ def main():
 if __name__ == "__main__":
     main()
 
+```
+
+To run on China Telecom's TianYan quantum cloud platform, replace `LocalRunner()` with:
+
+```python
+from cqlib_algorithm.execution import TianYanRunner
+
+runner = TianYanRunner(login_key="YOUR_KEY", machine="tianyan_sw")
 ```
 
 ---

@@ -1,6 +1,6 @@
 # This code is part of cqlib.
 #
-# Copyright (C) 2025 China Telecom Quantum Group.
+# Copyright (C) 2025-2026 China Telecom Quantum Group.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE file in the root directory
@@ -152,7 +152,7 @@ def vrp_to_qubo(problem: VRP, A_assign: float = 10000, A_pos: float = 10000) -> 
     """Convert a Vehicle Routing Problem (VRP) instance into a QUBO model.
 
     This function automatically detects whether the VRP instance includes
-    vehicle capacity information (i.e., `positions_per_vehicle` or `capacity` > 0).
+    vehicle capacity information.
     If so, it uses a **position-based capacitated formulation**; otherwise,
     it uses a **uncapacitated arc-based formulation**.
 
@@ -182,15 +182,15 @@ def vrp_to_qubo(problem: VRP, A_assign: float = 10000, A_pos: float = 10000) -> 
     n = int(problem.n)
     K = int(problem.vehicle_count)
     D = problem.distance
-
-    # ---------------------------------------------------------------------
-    # Detect whether the instance contains capacity information.
-    # ---------------------------------------------------------------------
     P = None
-    if getattr(problem, "positions_per_vehicle", None) and int(problem.positions_per_vehicle) > 0:
-        P = int(problem.positions_per_vehicle)
-    elif getattr(problem, "capacity", None) and int(problem.capacity) > 0:
-        P = int(problem.capacity)
+
+    positions_per_vehicle = getattr(problem, "positions_per_vehicle", None)
+    if positions_per_vehicle is not None and int(positions_per_vehicle) > 0:
+        P = int(positions_per_vehicle)
+    else:
+        capacity = getattr(problem, "capacity", None)
+        if capacity is not None and int(capacity) > 0:
+            P = int(capacity)
 
     # =====================================================================
     # Case 1: Capacitated VRP using position-based binary variables x_{i,p,k}

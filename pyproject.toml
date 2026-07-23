@@ -41,8 +41,8 @@ dependencies = { file = "requirements.txt" }
 [project.urls]
 Homepage = "https://qc.zdxlz.com/"
 Documentation = "https://qc.zdxlz.com/learn/#/resource/informationSpace"
-Repository = "https://gitee.com/cq-lib/cqlib-algorithm"
-Issues = "https://gitee.com/cq-lib/cqlib-algorithm/issues"
+Repository = "https://github.com/cq-lib/cqlib-algorithm"
+Issues = "https://github.com/cq-lib/cqlib-algorithm/issues"
 
 [tool.setuptools]
 packages = { find = { } }

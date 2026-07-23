@@ -35,7 +35,7 @@ def energy_of_bitstring(ising: IsingHamiltonian, bitstr: str) -> float:
     """Compute the Ising energy of a given bitstring.
 
     Uses the mapping ``'0' -> +1`` and ``'1' -> -1`` for spins. The Hamiltonian
-    is assumed to be of the form ``H = sum_i h_i s_i + sum_{i<j} J_ij s_i s_j``.
+    is assumed to be of the form ``H = sum_i h_i s_i + sum_{i<j} J_ij s_i s_j + offset``.
 
     Args:
         ising: Target Ising Hamiltonian with fields ``h`` and ``J``.
@@ -45,7 +45,7 @@ def energy_of_bitstring(ising: IsingHamiltonian, bitstr: str) -> float:
         float: Energy of the configuration under the Ising model.
     """
     s = _spin_from_bitstring(bitstr)
-    e = 0.0
+    e = float(getattr(ising, "offset", 0.0))
     for i, hi in ising.h.items():
         e += hi * s[i]
     for (i, j), Jij in ising.J.items():

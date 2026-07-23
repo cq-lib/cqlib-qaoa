@@ -1,6 +1,6 @@
 # This code is part of cqlib.
 #
-# Copyright (C) 2025 China Telecom Quantum Group.
+# Copyright (C) 2025-2026 China Telecom Quantum Group.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE file in the root directory
@@ -12,8 +12,8 @@
 
 """LocalRunner.
 
-This module provides a local runner that executes a circuit using a
-statevector simulator and returns probability distributions over bitstrings.
+This module provides a local runner that executes a circuit using the current
+cqlib statevector simulator and returns probability distributions over bitstrings.
 It also defines a :class:`SubmitResult` dataclass used to pass submission
 metadata alongside results.
 """
@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from typing import Any
 from datetime import datetime
 
-from cqlib.simulator.statevector_simulator import StatevectorSimulator
+from cqlib.qis.state import Statevector
 from cqlib_algorithm.visualization.probability_plot import draw_probability
 
 
@@ -79,7 +79,7 @@ class LocalRunner:
 
         Args:
             circ: Circuit to execute. Must be compatible with
-                :class:`StatevectorSimulator`.
+                :class:`cqlib.qis.state.Statevector`.
             num_shots: Number of measurement shots for sampling.
 
         Returns:
@@ -90,16 +90,23 @@ class LocalRunner:
                       decreasing probability.
 
         Notes:
-            The local statevector sampler typically yields bitstrings with Q0 on
-            the **right**. To be consistent with many external tools that expect
-            the leftmost bit as Q0, we explicitly reverse each bitstring here.
+            cqlib outcomes format Q0 as the rightmost bit. The algorithm package
+            uses Q0 as the leftmost bit for objective evaluation, so the local
+            result reverses sampled bitstrings before returning them.
         """
-        simulator = StatevectorSimulator(circ)
-        counts = simulator.sample(shots=num_shots)
+        if not isinstance(num_shots, int) or isinstance(num_shots, bool) or num_shots <= 0:
+            raise ValueError("num_shots must be a positive integer.")
+
+        n = self._infer_num_qubits(circ)
+        simulator = Statevector.from_circuit(circ)
+        counts: dict[str, int] = {}
+        for outcome in simulator.sample_shots(num_shots):
+            bitstr = outcome.to_bitstring(n)[::-1]
+            counts[bitstr] = counts.get(bitstr, 0) + 1
+
         total = sum(counts.values()) or 1
         probs = {b: v / total for b, v in counts.items()}
-        probs_le = {s[::-1]: p for s, p in probs.items()}
-        probs_sorted = dict(sorted(probs_le.items(), key=lambda kv: (-kv[1], kv[0])))
+        probs_sorted = dict(sorted(probs.items(), key=lambda kv: (-kv[1], kv[0])))
 
         result = {"probability": probs_sorted}
 

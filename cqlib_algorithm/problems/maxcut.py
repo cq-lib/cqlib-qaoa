@@ -52,7 +52,10 @@ class MaxCut:
           parameters.
         - If ``weights`` is provided, coerce keys to ordered pairs and values to float.
         """
-        if not self.weights:
+        if not isinstance(self.n, int) or self.n < 0:
+            raise ValueError("n must be a non-negative integer.")
+
+        if self.weights is None:
             self.weights = self._random_weights(
                 self.n,
                 edge_prob=self.edge_prob,
@@ -62,9 +65,25 @@ class MaxCut:
                 no_isolated=self.no_isolated,
             )
         else:
-            self.weights = {
-                (min(u, v), max(u, v)): float(w) for (u, v), w in self.weights.items()
-            }
+            normalized: dict[Edge, float] = {}
+            for edge, w in self.weights.items():
+                if not isinstance(edge, tuple) or len(edge) != 2:
+                    raise ValueError(f"Invalid edge key {edge!r}; expected a pair (u, v).")
+                u, v = edge
+                if not isinstance(u, int) or not isinstance(v, int):
+                    raise ValueError(f"Invalid edge {edge!r}; vertex indices must be integers.")
+                if not (0 <= u < self.n) or not (0 <= v < self.n):
+                    raise ValueError(
+                        f"Invalid edge {edge!r}; vertices must satisfy 0 <= u,v < n={self.n}."
+                    )
+                if u == v:
+                    raise ValueError(f"Invalid self-loop edge {edge!r}; MaxCut requires u != v.")
+                weight = float(w)
+                if not np.isfinite(weight):
+                    raise ValueError(f"Invalid weight for edge {edge!r}; weight must be finite.")
+                a, b = (u, v) if u < v else (v, u)
+                normalized[(a, b)] = weight
+            self.weights = normalized
 
     @staticmethod
     def _random_weights(

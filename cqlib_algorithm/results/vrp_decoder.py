@@ -248,6 +248,7 @@ def decode_from_platform_result(
     *,
     vehicle_count: int,
     ising: IsingHamiltonian,
+    positions_per_vehicle: int | None = None,
     depot: int = 0,
 ) -> tuple[str, list[list[int]], np.ndarray]:
     """Decode VRP routes from platform result (auto detect capacity).
@@ -277,17 +278,41 @@ def decode_from_platform_result(
     K = int(vehicle_count)
     N = len(best_raw)
 
+    P_given = (
+    int(positions_per_vehicle)
+    if positions_per_vehicle is not None and int(positions_per_vehicle) > 0
+    else None
+    )
+
     expect_arc = n * (n - 1)
+
+    if P_given is not None:
+        expected_assignment = (n - 1) * P_given * K
+        if N < expected_assignment:
+            raise ValueError(
+                f"bitstring length {N} does not match expected assignment length "
+                f"{expected_assignment} for positions_per_vehicle={P_given}."
+            )
+        X = _bitstr_to_assignment(best_raw, n=n, K=K, P=P_given)
+        routes = _assignment_to_routes(X)
+        return best_raw, routes, X
+
     if N == expect_arc:
         Y = _bitstr_to_arcs(best_raw, n=n)
         routes = _arcs_to_routes(Y, depot=depot, K=K)
         return best_raw, routes, Y
-    else:
-        denom = (n - 1) * K
-        P = N // denom
-        X = _bitstr_to_assignment(best_raw, n=n, K=K, P=P)
-        routes = _assignment_to_routes(X)
-        return best_raw, routes, X
+
+    denom = (n - 1) * K
+    if N % denom != 0:
+        raise ValueError(
+            f"Cannot infer VRP assignment layout from bitstring length {N}; "
+            f"expected arc length {expect_arc} or a multiple of {(n - 1) * K}."
+        )
+
+    P = N // denom
+    X = _bitstr_to_assignment(best_raw, n=n, K=K, P=P)
+    routes = _assignment_to_routes(X)
+    return best_raw, routes, X
 
 
 def plot_vrp_solution(
@@ -296,6 +321,7 @@ def plot_vrp_solution(
     *,
     n: int,
     vehicle_count: int,
+    positions_per_vehicle: int | None = None,
     depot: int = 0,
     title: str = "VRP Solution (QAOA)",
     show: bool = True,
@@ -316,8 +342,19 @@ def plot_vrp_solution(
     Returns:
         list[list[int]]: Decoded per-vehicle customer sequences.
     """
+    decode_kwargs = {
+    "vehicle_count": vehicle_count,
+    "ising": ising,
+    "depot": depot,
+    }
+
+    if positions_per_vehicle is not None:
+        decode_kwargs["positions_per_vehicle"] = positions_per_vehicle
+
     _, routes, Y = decode_from_platform_result(
-        result, n=n, vehicle_count=vehicle_count, ising=ising, depot=depot
+        result,
+        n=n,
+        **decode_kwargs,
     )
     print("Best solution:", routes)
 

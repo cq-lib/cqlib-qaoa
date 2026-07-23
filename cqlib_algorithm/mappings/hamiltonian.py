@@ -78,8 +78,7 @@ class IsingHamiltonian:
             coeffs.append(f"{v:.{precision}f}")
 
         # Offset
-        if abs(self.offset) > 1e-12:
-            offset = self.offset
+        offset = float(self.offset)
 
         pauli_str = ", ".join([f"'{p}'" for p in paulis])
         coeff_str = ", ".join(coeffs)

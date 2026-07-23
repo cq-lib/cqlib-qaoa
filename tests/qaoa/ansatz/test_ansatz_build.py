@@ -1,6 +1,6 @@
 # This code is part of cqlib.
 #
-# Copyright (C) 2025 China Telecom Quantum Group.
+# Copyright (C) 2025-2026 China Telecom Quantum Group.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE file in the root directory
@@ -41,13 +41,13 @@ class FakeCircuit:
     def rx(self, q, theta):
         self.ops.append(("RX", q, theta))
 
-    def barrier(self, *qs):
+    def barrier(self, qs):
         self._barrier_calls += 1
         self.ops.append(("BARRIER", tuple(qs)))
 
-    def measure_all(self):
+    def measure(self, q):
         self._measured = True
-        self.ops.append(("MEASURE_ALL",))
+        self.ops.append(("M", q))
 
     def compose(self, other):
         self.merged.append(getattr(other, "name", "unnamed"))
@@ -94,7 +94,7 @@ def test_build_qaoa_circuit_defaults_and_structure(monkeypatch):
     assert len(rzz_ops) == 2 * len(J)
 
     assert circ._measured is True
-    assert ("MEASURE_ALL",) == circ.ops[-1]
+    assert [op for op in circ.ops if op[0] == "M"] == [("M", 0), ("M", 1), ("M", 2)]
 
     assert hasattr(circ, "_qaoa_meta")
     meta = getattr(circ, "_qaoa_meta")

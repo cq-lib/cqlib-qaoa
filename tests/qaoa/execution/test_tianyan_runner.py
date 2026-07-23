@@ -1,6 +1,6 @@
 # This code is part of cqlib.
 #
-# Copyright (C) 2025 China Telecom Quantum Group.
+# Copyright (C) 2025-2026 China Telecom Quantum Group.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE file in the root directory
@@ -13,6 +13,8 @@
 """Unit tests for TianYanRunner (platform execution path)."""
 
 import importlib
+from types import SimpleNamespace
+
 import pytest
 
 MODULE_E = "cqlib_algorithm.execution.platform_runner"
@@ -25,37 +27,58 @@ SubmitResult = ty_mod.SubmitResult
 # Fakes / helpers
 # ---------------------------------------------------------------------
 class FakePlatform:
-    """Injectable fake TianYanPlatform for deterministic I/O behavior."""
+    """Injectable fake cqlib_tianyan platform for deterministic I/O."""
 
-    def __init__(self, login_key):
-        self.login_key = login_key
+    def __init__(self):
+        self.login_kwargs = None
         self.machine = None
-        self.created_labs = []
-        self.submissions = []
-        self.queries = []
-        self._query_result = [{"probability": {"0": 0.6, "1": 0.4}}]
+        self.backend = FakeBackend()
 
-    def set_machine(self, machine):
+    def get_backend(self, machine):
         self.machine = machine
+        self.backend.machine = machine
+        return self.backend
 
-    def create_lab(self, name, remark):
-        """Create a lab and return a fixed lab_id for testing."""
-        self.created_labs.append((name, remark))
-        return 42 
 
-    def submit_job(self, circuit, exp_name, lab_id, num_shots):
-        """Record a job submission and return a fixed query_id."""
-        self.submissions.append(
-            {"circuit": circuit, "exp_name": exp_name, "lab_id": lab_id, "shots": num_shots}
+class FakeBackend:
+    """Minimal backend with run/wait and device_config hooks."""
+
+    def __init__(self):
+        self.machine = None
+        self.submissions = []
+        self.device_config_called = False
+        self._results = [FakeExecutionResult(probabilities={"0": 0.6, "1": 0.4})]
+
+    def device_config(self):
+        self.device_config_called = True
+        return "DEVICE_CONFIG"
+
+    def run(self, circuits, shots):
+        self.submissions.append({"circuits": list(circuits), "shots": shots})
+        return FakeTask(self._results)
+
+
+class FakeTask:
+    """Minimal task handle returned by backend.run."""
+
+    def __init__(self, results):
+        self.task_ids = ["Q-123456"]
+        self.results = results
+        self.wait_calls = []
+
+    def wait(self, timeout_secs, poll_interval_secs):
+        self.wait_calls.append(
+            {"timeout_secs": timeout_secs, "poll_interval_secs": poll_interval_secs}
         )
-        return "Q-123456" 
+        return list(self.results)
 
-    def query_experiment(self, query_id, max_wait_time, sleep_time):
-        """Record query parameters and return the configured query result list."""
-        self.queries.append(
-            {"query_id": query_id, "max_wait_time": max_wait_time, "sleep_time": sleep_time}
-        )
-        return list(self._query_result)
+
+class FakeExecutionResult:
+    """Minimal execution result with cqlib_tianyan-like fields."""
+
+    def __init__(self, probabilities=None, counts=None):
+        self.probabilities = probabilities
+        self.counts = counts or {}
 
 
 class FakeCircuit:
@@ -67,28 +90,34 @@ class FakeCircuit:
 
 
 def _patch_platform(monkeypatch, platform_instance: FakePlatform):
-    """Patch TianYanPlatform factory to return the provided fake instance."""
-    def _factory(login_key):
-        assert login_key 
-        return platform_instance
+    """Patch TianyanPlatform.login to return the provided fake instance."""
+    class _Platform:
+        @staticmethod
+        def login(**kwargs):
+            assert kwargs["api_key"]
+            platform_instance.login_kwargs = dict(kwargs)
+            return platform_instance
 
-    monkeypatch.setattr(ty_mod, "TianYanPlatform", _factory)
+    monkeypatch.setattr(ty_mod, "TianyanPlatform", _Platform)
 
 
-def _patch_transpile(monkeypatch, returns=None, recorder: dict | None = None):
-    """Patch QCIS transpilation and optionally record invocation details."""
+def _patch_compile(monkeypatch, returns=None, recorder: dict | None = None):
+    """Patch cqlib.compile.compile and optionally record invocation details."""
     if returns is None:
-        tcirc = FakeCircuit("TRANSPILED_QCIS")
-        returns = (tcirc, "INIT_LAYOUT", "SWAP_MAPPING", {0: 1, 1: 0})
+        returns = SimpleNamespace(
+            circuit=FakeCircuit("TRANSPILED_QCIS"),
+            initial_layout="INIT_LAYOUT",
+            steps="COMPILE_STEPS",
+        )
 
-    def _fake_transpile(qcis_text, platform):
+    def _fake_compile(circuit, device):
         if recorder is not None:
             recorder["called"] = True
-            recorder["arg_qcis"] = qcis_text
-            recorder["machine"] = getattr(platform, "machine", None)
+            recorder["circuit"] = circuit
+            recorder["device"] = device
         return returns
 
-    monkeypatch.setattr(ty_mod, "transpile_qcis", _fake_transpile)
+    monkeypatch.setattr(ty_mod, "compile_circuit", _fake_compile)
 
 
 def _patch_draw(monkeypatch, bucket: dict):
@@ -113,77 +142,105 @@ def test_init_requires_login_key():
         _ = TianYanRunner(login_key="")
 
 
-def test_init_sets_machine(monkeypatch):
-    """Constructor should set platform machine selection."""
-    fp = FakePlatform("KEY")
+def test_init_logs_in_and_gets_backend(monkeypatch):
+    """Constructor should log in through cqlib_tianyan and select a backend."""
+    fp = FakePlatform()
     _patch_platform(monkeypatch, fp)
 
-    r = TianYanRunner(login_key="KEY", machine="tianyan_sw")
+    r = TianYanRunner(login_key="KEY", machine="tianyan_sw", domain="https://api")
     assert r.machine == "tianyan_sw"
     assert fp.machine == "tianyan_sw"
+    assert fp.login_kwargs["api_key"] == "KEY"
+    assert fp.login_kwargs["domain"] == "https://api"
 
 
-def test_run_simulator_no_transpile(monkeypatch):
-    """Simulator path should submit original QCIS without transpilation."""
-    fp = FakePlatform("KEY")
+def test_run_simulator_no_compile(monkeypatch):
+    """Simulator path should submit original QCIS without compilation."""
+    fp = FakePlatform()
     _patch_platform(monkeypatch, fp)
-    _patch_transpile(monkeypatch, recorder={}) 
 
-    runner = TianYanRunner(login_key="KEY", machine="tianyan_sw") 
+    def _compile_should_not_run(circuit, device):
+        raise AssertionError("compile should not run for tianyan_sw")
+
+    monkeypatch.setattr(ty_mod, "compile_circuit", _compile_should_not_run)
+
+    runner = TianYanRunner(login_key="KEY", machine="tianyan_sw")
     circ = FakeCircuit("ORIGINAL_QCIS")
 
     submit, single = runner.run_circuit(circ, num_shots=256)
 
-    assert fp.created_labs and isinstance(fp.created_labs[0][0], str)
-    assert fp.submissions[-1]["circuit"] == "ORIGINAL_QCIS"
-    assert fp.submissions[-1]["shots"] == 256
+    assert fp.backend.submissions[-1]["circuits"] == ["ORIGINAL_QCIS"]
+    assert fp.backend.submissions[-1]["shots"] == 256
     assert isinstance(submit, SubmitResult)
-    assert submit.lab_id == 42
+    assert submit.query_id == "Q-123456"
+    assert submit.lab_id is None
     assert submit.machine == "tianyan_sw"
     assert submit.num_shots == 256
     assert submit.used_circuit is circ
     assert submit.mapping_virtual_to_final is None
     assert submit.initial_layout is None
     assert submit.swap_mapping is None
-    assert single == {"probability": {"0": 0.6, "1": 0.4}}
+    assert single["probability"] == {"0": 0.6, "1": 0.4}
 
 
-def test_run_hardware_with_transpile_inferred(monkeypatch):
-    """Hardware path should transpile and submit the transpiled QCIS."""
-    fp = FakePlatform("KEY")
+def test_run_hardware_with_compile_inferred(monkeypatch):
+    """Hardware path should compile and submit the compiled QCIS."""
+    fp = FakePlatform()
     _patch_platform(monkeypatch, fp)
     rec = {}
-    _patch_transpile(monkeypatch, recorder=rec)
+    _patch_compile(monkeypatch, recorder=rec)
 
-    runner = TianYanRunner(login_key="KEY", machine="tianyan_qpu") 
+    runner = TianYanRunner(login_key="KEY", machine="tianyan_qpu")
     circ = FakeCircuit("ORIGINAL_QCIS")
 
     submit, single = runner.run_circuit(circ, num_shots=100)
 
     assert rec.get("called") is True
-    assert rec.get("arg_qcis") == "ORIGINAL_QCIS"
-    assert fp.submissions[-1]["circuit"] == "TRANSPILED_QCIS"
+    assert rec.get("circuit") is circ
+    assert rec.get("device") == "DEVICE_CONFIG"
+    assert fp.backend.device_config_called is True
+    assert fp.backend.submissions[-1]["circuits"] == ["TRANSPILED_QCIS"]
     assert submit.used_circuit.qcis == "TRANSPILED_QCIS"
-    assert submit.mapping_virtual_to_final == {0: 1, 1: 0}
+    assert submit.mapping_virtual_to_final is None
     assert submit.initial_layout == "INIT_LAYOUT"
-    assert submit.swap_mapping == "SWAP_MAPPING"
-    assert single == {"probability": {"0": 0.6, "1": 0.4}}
+    assert submit.swap_mapping == "COMPILE_STEPS"
+    assert single["probability"] == {"0": 0.6, "1": 0.4}
 
 
-def test_run_requires_lab_if_disabled(monkeypatch):
-    """If lab auto-creation is disabled, missing lab should raise ValueError."""
-    fp = FakePlatform("KEY")
+def test_lab_metadata_is_passthrough(monkeypatch):
+    """Lab and experiment arguments are preserved as metadata for callers."""
+    fp = FakePlatform()
     _patch_platform(monkeypatch, fp)
     runner = TianYanRunner(login_key="KEY", machine="tianyan_sw")
 
-    with pytest.raises(ValueError):
-        runner.run_circuit(FakeCircuit(), create_lab_if_missing=False)
+    submit, _ = runner.run_circuit(
+        FakeCircuit(),
+        exp_name="exp-name",
+        lab_id=42,
+    )
+    assert submit.exp_name == "exp-name"
+    assert submit.lab_id == 42
+
+
+def test_run_reverses_result_bitstrings(monkeypatch):
+    """Platform results are converted from Q0-right to Q0-left bitstrings."""
+    fp = FakePlatform()
+    fp.backend._results = [
+        FakeExecutionResult(probabilities={"01": 0.75, "10": 0.25}, counts={"01": 3})
+    ]
+    _patch_platform(monkeypatch, fp)
+    runner = TianYanRunner(login_key="KEY", machine="tianyan_sw")
+
+    _, single = runner.run_circuit(FakeCircuit(), num_shots=4)
+
+    assert single["probability"] == {"10": 0.75, "01": 0.25}
+    assert single["counts"] == {"10": 3}
 
 
 def test_run_raises_on_empty_result(monkeypatch):
     """Empty platform result list should raise RuntimeError."""
-    fp = FakePlatform("KEY")
-    fp._query_result = []
+    fp = FakePlatform()
+    fp.backend._results = []
     _patch_platform(monkeypatch, fp)
     runner = TianYanRunner(login_key="KEY", machine="tianyan_sw")
 
@@ -193,7 +250,7 @@ def test_run_raises_on_empty_result(monkeypatch):
 
 def test_print_result_calls_draw(monkeypatch, capsys):
     """print_result should call draw_probability and print key metadata."""
-    fp = FakePlatform("KEY")
+    fp = FakePlatform()
     _patch_platform(monkeypatch, fp)
 
     bucket = {}

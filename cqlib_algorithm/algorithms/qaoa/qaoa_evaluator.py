@@ -13,6 +13,7 @@
 """QAOA evaluator."""
 
 from __future__ import annotations
+import math
 
 from cqlib_algorithm.mappings.hamiltonian import IsingHamiltonian
 from cqlib_algorithm.execution import LocalRunner, TianYanRunner
@@ -40,6 +41,7 @@ class QAOAEvaluator:
         name: str = "QAOA_eval",
         shots: int = 2000,
         insert_barriers: bool = False,
+        wrap_angles: bool = True,
     ):
         """Initialize the evaluator.
 
@@ -51,6 +53,7 @@ class QAOAEvaluator:
             name: Circuit/experiment name.
             shots: Number of measurement shots.
             insert_barriers: Whether to insert visual barriers between layers.
+            wrap_angles: Whether to wrap ``gamma`` and ``beta`` into canonical ranges.
         """
         self.ising = ising
         self.runner = runner
@@ -59,6 +62,7 @@ class QAOAEvaluator:
         self.name = name
         self.shots = shots
         self.insert_barriers = insert_barriers
+        self.wrap_angles = wrap_angles
 
     def _unflatten(self, theta: list[float]) -> tuple[list[float], list[float]]:
         """Split a flat parameter vector into (gammas, betas).
@@ -80,6 +84,9 @@ class QAOAEvaluator:
         )
         gammas = list(theta[: self.reps])
         betas = list(theta[self.reps :])
+        if self.wrap_angles:
+            gammas = [float(t) % (2 * math.pi) for t in gammas]
+            betas = [float(t) % math.pi for t in betas]
         return gammas, betas
 
     def evaluate(
@@ -129,6 +136,16 @@ class QAOAEvaluator:
                 num_shots=self.shots,
                 lab_id=lab_id,
                 need_transpile=need_transpile,
+            )
+        elif hasattr(self.runner, "run_circuit"):
+            submit_info, result = self.runner.run_circuit(
+                circ,
+                num_shots=self.shots,
+            )
+        else:
+            raise TypeError(
+                f"Unsupported runner type: {type(self.runner).__name__}. "
+                "Runner must provide run_circuit(circ, *, num_shots=...)."
             )
         prob = result.get("probability", {})
         expval = expectation_from_probability(self.ising, prob)

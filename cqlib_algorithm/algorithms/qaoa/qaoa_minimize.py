@@ -13,6 +13,7 @@
 """QAOA objective wrapper and minimization moduel."""
 
 from __future__ import annotations
+import math
 from typing import Any
 
 from cqlib_algorithm.algorithms.qaoa.qaoa_evaluator import QAOAEvaluator
@@ -63,6 +64,12 @@ class QAOAMinimizer:
         Raises:
             TypeError: If the evaluator output type or structure is unsupported.
         """
+        if self.wrap_angles:
+            reps = getattr(self.evaluator, "reps", len(theta) // 2)
+            theta = [
+                *(float(t) % (2 * math.pi) for t in theta[:reps]),
+                *(float(t) % math.pi for t in theta[reps:]),
+            ]
         out = self.evaluator.evaluate(theta, need_transpile=need_transpile)
 
         # 1) Scalar output

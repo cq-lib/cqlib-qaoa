@@ -48,6 +48,7 @@ class VRP:
     demand: np.ndarray | None = None
     vehicle_count: int = 1
     capacity: int = 0
+    positions_per_vehicle: int | None = None
 
     # ---- random-instance parameters (used when distance is None) ----
     gen_method: Literal["euclidean", "random_symmetric"] = "euclidean"

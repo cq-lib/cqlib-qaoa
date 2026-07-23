@@ -1,6 +1,6 @@
 # This code is part of cqlib.
 #
-# Copyright (C) 2025 China Telecom Quantum Group.
+# Copyright (C) 2025-2026 China Telecom Quantum Group.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE file in the root directory
@@ -14,17 +14,45 @@
 
 This module provides a builder for QAOA circuits using an Ising cost Hamiltonian
 ``(h, J)`` together with X/XY mixers or custom mixer/initial-state callbacks.
-It relies on a minimal :class:`Circuit` interface from ``cqlib.circuits``.
+It relies on the current :class:`Circuit` interface from ``cqlib``.
 """
 
-from typing import Callable
+from typing import Any, Callable
 
-from cqlib.circuits import Circuit
+from cqlib import Circuit
 from cqlib_algorithm.transpiler.builders import rzz_via_cnot, rxx_via_cnot, ryy_via_cnot
 
 Edge = tuple[int, int]
 MixerFn = Callable[[Circuit, list[int], float], None]
 InitFn = Callable[[Circuit, list[int]], None]
+_CIRCUIT_METADATA: dict[int, dict[str, Any]] = {}
+
+
+def _set_qaoa_metadata(circ: Circuit, metadata: dict[str, Any]) -> None:
+    """Store metadata for extension-backed Circuit objects that disallow attributes."""
+    try:
+        setattr(circ, "_qaoa_meta", metadata)
+    except Exception:
+        _CIRCUIT_METADATA[id(circ)] = metadata
+
+
+def get_qaoa_metadata(circ: Circuit) -> dict[str, Any] | None:
+    """Return QAOA metadata attached during circuit construction."""
+    direct = getattr(circ, "_qaoa_meta", None)
+    if direct is not None:
+        return direct
+    return _CIRCUIT_METADATA.get(id(circ))
+
+
+def _barrier(circ: Circuit, qubits: list[int]) -> None:
+    """Insert a barrier across all QAOA qubits."""
+    circ.barrier(qubits)
+
+
+def _measure_qubits(circ: Circuit, qubits: list[int]) -> None:
+    """Append terminal measurements for every qubit."""
+    for q in qubits:
+        circ.measure(q)
 
 
 def prepare_plus_state(circ: Circuit, qubits: list[int]):
@@ -248,36 +276,30 @@ def build_qaoa_circuit(
 
     # Circuit preparation
     qubits = list(range(n))
-    try:
-        circ = Circuit(qubits=qubits, name=name)
-    except Exception:
-        circ = Circuit(qubits=qubits)
+    circ = Circuit(qubits)
 
     # Initial state preparation
     init_fn(circ, qubits)
 
     # Attach metadata
-    try:
-        setattr(circ, "_qaoa_meta", _qaoa_meta)
-    except Exception:
-        pass
+    _set_qaoa_metadata(circ, _qaoa_meta)
 
     # Layered structure: [Cost(gamma_k) -> Mixer(beta_k)] for k in 0..p-1
     for k in range(reps):
         build_cost_layer(circ, h, J, gammas[k])
         if insert_barriers:
             try:
-                circ.barrier(*qubits)
+                _barrier(circ, qubits)
             except Exception:
                 pass
         mixer_fn(circ, qubits, betas[k])
         if insert_barriers and k < reps - 1:
             try:
-                circ.barrier(*qubits)
+                _barrier(circ, qubits)
             except Exception:
                 pass
 
     # Terminal measurements
-    circ.measure_all()
+    _measure_qubits(circ, qubits)
 
     return circ

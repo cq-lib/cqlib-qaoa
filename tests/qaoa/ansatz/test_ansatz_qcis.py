@@ -1,6 +1,6 @@
 # This code is part of cqlib.
 #
-# Copyright (C) 2025 China Telecom Quantum Group.
+# Copyright (C) 2025-2026 China Telecom Quantum Group.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE file in the root directory
@@ -14,12 +14,13 @@
 
 import importlib
 import re
+
 import pytest
+from cqlib import Circuit
+from cqlib.ir import qcis
 
 MODULE_PATH = "cqlib_algorithm.ansatz.qaoa_ansatz"
 ansatz = importlib.import_module(MODULE_PATH)
-CircuitMod = importlib.import_module("cqlib.circuits")
-Circuit = getattr(CircuitMod, "Circuit")
 
 # ----------------------------- Normalization utils -----------------------------
 def _normalize_floats(s: str, ndigits: int = 6) -> str:
@@ -52,37 +53,21 @@ def expected_qcis_text() -> str:
         H Q2
         H Q3
 
-        H Q1
-        CZ Q0 Q1
-        H Q1
+        CX Q0 Q1
         RZ Q1 0.8
-        H Q1
-        CZ Q0 Q1
-        H Q1
+        CX Q0 Q1
 
-        H Q3
-        CZ Q0 Q3
-        H Q3
+        CX Q0 Q3
         RZ Q3 0.8
-        H Q3
-        CZ Q0 Q3
-        H Q3
+        CX Q0 Q3
 
-        H Q2
-        CZ Q1 Q2
-        H Q2
+        CX Q1 Q2
         RZ Q2 0.8
-        H Q2
-        CZ Q1 Q2
-        H Q2
+        CX Q1 Q2
 
-        H Q3
-        CZ Q2 Q3
-        H Q3
+        CX Q2 Q3
         RZ Q3 0.8
-        H Q3
-        CZ Q2 Q3
-        H Q3
+        CX Q2 Q3
 
         RX Q0 0.4
         RX Q1 0.4
@@ -121,21 +106,22 @@ def test_qcis_emit_snapshot_matches_expected(expected_qcis_text):
         n=4, h=h, J=J, reps=1, mixer_operator="x", insert_barriers=False, name="qaoa_ising_4"
     )
 
-    qcis = circ.as_str(qcis_compliant=True)
-    got = _normalize_qcis(qcis)
+    qcis_text = qcis.dumps(circ)
+    got = _normalize_qcis(qcis_text)
     exp = expected_qcis_text
 
     assert got == exp, f"QCIS mismatch.\n--- got ---\n{got}\n--- exp ---\n{exp}"
 
 def test_qcis_round_trip_is_stable(expected_qcis_text):
     """Test qcis round trip is stable."""
-    circ2 = Circuit.load(expected_qcis_text)
-    qcis2 = _normalize_qcis(circ2.as_str(qcis_compliant=True))
+    circ2 = qcis.loads(expected_qcis_text)
+    assert isinstance(circ2, Circuit)
+    qcis2 = _normalize_qcis(qcis.dumps(circ2))
     assert qcis2 == expected_qcis_text
 
 def test_qcis_style_whitelist_and_measure_tail(expected_qcis_text):
     """Basic style checks: op whitelist and no gates after measurements."""
-    ALLOWED = {"H", "RZ", "RX", "CZ", "M"} 
+    ALLOWED = {"H", "RZ", "RX", "CX", "M"}
 
     def _op(line: str) -> str | None:
         m = re.match(r"^\s*([A-Z]+)\b", line)

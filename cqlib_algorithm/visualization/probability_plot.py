@@ -39,17 +39,20 @@ def draw_probability(
 
     states, probs = zip(*items)
 
-    plt.figure(figsize=(10, 5))
+    fig_width = max(12, 0.8 * len(states))
+    plt.figure(figsize=(fig_width, 6))
+
     bars = plt.bar(states, probs, color="C0")
     plt.title(title, fontsize=14, fontweight="bold")
     plt.ylabel("Probability", fontsize=12)
     plt.xlabel("Qubit string", fontsize=12)
-    plt.xticks(rotation=60)
+    plt.xticks(rotation=60, ha="right")
 
+    y_offset = max(probs) * 0.02
     for bar, p in zip(bars, probs):
         plt.text(
             bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + 0.002,
+            bar.get_height() + y_offset,
             f"{p:.3f}",
             ha="center",
             va="bottom",

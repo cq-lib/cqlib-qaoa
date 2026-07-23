@@ -1,6 +1,6 @@
 # This code is part of cqlib.
 #
-# Copyright (C) 2025 China Telecom Quantum Group.
+# Copyright (C) 2025-2026 China Telecom Quantum Group.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE file in the root directory
@@ -22,7 +22,6 @@ from cqlib_algorithm.ansatz.qaoa_ansatz import build_qaoa_circuit
 from cqlib_algorithm.execution import LocalRunner, TianYanRunner
 from cqlib_algorithm.algorithms.qaoa.qaoa_evaluator import QAOAEvaluator
 from cqlib_algorithm.algorithms.qaoa.qaoa_minimize import QAOAMinimizer
-from cqlib_algorithm.visualization.ansatz_plot import draw_ansatz
 from cqlib_algorithm.optimizers.factory import OptimizerFactory
 from cqlib_algorithm.optimizers.options import OptimizerOptions
 from cqlib_algorithm.algorithms.qaoa.qaoa_result import QAOAResult
@@ -84,6 +83,7 @@ class QAOASolver:
             mixer=self.qaoa_cfg.mixer,
             shots=self.qaoa_cfg.shots,
             name=self.qaoa_cfg.name,
+            wrap_angles=self.qaoa_cfg.wrap_angles,
         )
         self.minimizer = QAOAMinimizer(
             ising=self.ising,
@@ -122,9 +122,9 @@ class QAOASolver:
         gammas = list(theta[:reps])
         betas = list(theta[reps:])
 
-        if getattr(self, "wrap_angles", False):
-            gammas = [t % (2 * math.pi) for t in gammas]
-            betas = [t % math.pi for t in betas]
+        if self.qaoa_cfg.wrap_angles:
+            gammas = [float(t) % (2 * math.pi) for t in gammas]
+            betas = [float(t) % math.pi for t in betas]
 
         circ = build_qaoa_circuit(
             n=ising.n,
@@ -137,7 +137,6 @@ class QAOASolver:
             insert_barriers=insert_barriers,
             name=name,
         )
-        draw_ansatz(circ, title="QAOA Ansatz")
         return circ
 
     # ------- Run entrypoint -------
