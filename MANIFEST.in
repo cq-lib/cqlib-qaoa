@@ -2,7 +2,7 @@ include LICENSE
 include README.md
 
 include pyproject.toml
-recursive-include cqlib_algorithm *.py
+recursive-include cqlib_qaoa *.py
 
 global-exclude __pycache__/*
 global-exclude *.py[cod]

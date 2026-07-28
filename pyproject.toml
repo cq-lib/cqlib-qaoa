@@ -1,6 +1,6 @@
 [project]
-name = "cqlib-algorithm"
-description = "Quantum algorithm package based on Cqlib"
+name = "cqlib-qaoa"
+description = "QAOA package based on Cqlib"
 authors = [
     { name = "China Telecom Quantum Group Quantum Computing Team", email = "tianyan@chinatelecom.cn" },
 ]
@@ -24,25 +24,27 @@ classifiers = [
 ]
 keywords = [
     "cqlib",
-    "cqlib algorithms",
+    "cqlib qaoa",
+    "qaoa",
+    "quantum approximate optimization algorithm",
+    "quantum optimization",
+    "combinatorial optimization",
+    "variational quantum algorithm",
     "quantum circuit",
     "quantum computing",
-    "quantum programming language",
-    "quantum",
-    "quantum algorithms",
 ]
 dynamic = ["version", "dependencies", ]
 
 
 [tool.setuptools.dynamic]
-version = { file = "cqlib_algorithm/VERSION.txt" }
+version = { file = "cqlib_qaoa/VERSION.txt" }
 dependencies = { file = "requirements.txt" }
 
 [project.urls]
 Homepage = "https://qc.zdxlz.com/"
 Documentation = "https://qc.zdxlz.com/learn/#/resource/informationSpace"
-Repository = "https://github.com/cq-lib/cqlib-algorithm"
-Issues = "https://github.com/cq-lib/cqlib-algorithm/issues"
+Repository = "https://github.com/cq-lib/cqlib-qaoa"
+Issues = "https://github.com/cq-lib/cqlib-qaoa/issues"
 
 [tool.setuptools]
 packages = { find = { } }

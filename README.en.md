@@ -1,4 +1,5 @@
-# Cqlib Algorithm
+# Cqlib-QAOA
+See the Chinese version at [Chinese version](README.md)。
 
 This project is a QAOA quantum algorithm package based on **[Cqlib](https://github.com/cq-lib)**, created by the development team of China Telecom Quantum Group. It includes functions such as creating new optimization tasks, generating Hamiltonians, creating quantum circuits, executing quantum circuits, measuring and sampling, and returning optimization results. 
 
@@ -8,10 +9,10 @@ This project is a QAOA quantum algorithm package based on **[Cqlib](https://gith
 
 Requirements: Python 3.10 or later.
 
-Install `cqlib-algorithm` using pip:
+Install `cqlib-qaoa` using pip:
 
 ```bash
-pip install cqlib-algorithm
+pip install cqlib-qaoa
 ```
 
 ## Package Structure
@@ -31,12 +32,12 @@ pip install cqlib-algorithm
 ## Example: Solve MaxCut with QAOA
 
 ```python
-from cqlib_algorithm.problems import MaxCut
-from cqlib_algorithm.mappings import maxcut_to_qubo, qubo_to_ising
-from cqlib_algorithm.visualization import plot_maxcut
-from cqlib_algorithm.execution import LocalRunner
-from cqlib_algorithm.algorithms import QAOASolver, QAOAConfig
-from cqlib_algorithm.optimizers import OptimizerOptions
+from cqlib_qaoa.problems import MaxCut
+from cqlib_qaoa.mappings import maxcut_to_qubo, qubo_to_ising
+from cqlib_qaoa.visualization import plot_maxcut
+from cqlib_qaoa.execution import LocalRunner
+from cqlib_qaoa.algorithms import QAOASolver, QAOAConfig
+from cqlib_qaoa.optimizers import OptimizerOptions
 
 def main():
     # 1) MaxCut instance
@@ -87,7 +88,7 @@ if __name__ == "__main__":
 To run on China Telecom's TianYan quantum cloud platform, replace `LocalRunner()` with:
 
 ```python
-from cqlib_algorithm.execution import TianYanRunner
+from cqlib_qaoa.execution import TianYanRunner
 
 runner = TianYanRunner(login_key="YOUR_KEY", machine="tianyan_sw")
 ```

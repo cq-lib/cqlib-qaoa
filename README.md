@@ -1,4 +1,5 @@
-# Cqlib Algorithm
+# Cqlib-QAOA
+英文版见 [English version](README.en.md)。
 
 本项目是由中电信量子集团开发团队打造的基于 **[Cqlib](https://github.com/cq-lib)** 的 QAOA 量子算法包，包含新建优化任务，生成哈密顿量，创建量子电路，执行量子电路，测量采样，返回优化结果等功能。
 
@@ -8,10 +9,10 @@
 
 环境要求：Python 3.10 及以上版本。
 
-使用 pip 安装 `cqlib-algorithm`：
+使用 pip 安装 `cqlib-qaoa`：
 
 ```bash
-pip install cqlib-algorithm
+pip install cqlib-qaoa
 ```
 
 ## 结构说明
@@ -31,12 +32,12 @@ pip install cqlib-algorithm
 ## 应用示例：使用 QAOA 求解 MaxCut 问题。
 
 ```python
-from cqlib_algorithm.problems import MaxCut
-from cqlib_algorithm.mappings import maxcut_to_qubo, qubo_to_ising
-from cqlib_algorithm.visualization import plot_maxcut
-from cqlib_algorithm.execution import LocalRunner
-from cqlib_algorithm.algorithms import QAOASolver, QAOAConfig
-from cqlib_algorithm.optimizers import OptimizerOptions
+from cqlib_qaoa.problems import MaxCut
+from cqlib_qaoa.mappings import maxcut_to_qubo, qubo_to_ising
+from cqlib_qaoa.visualization import plot_maxcut
+from cqlib_qaoa.execution import LocalRunner
+from cqlib_qaoa.algorithms import QAOASolver, QAOAConfig
+from cqlib_qaoa.optimizers import OptimizerOptions
 
 def main():
     # ---- 定义 Maxcut 问题 ----
@@ -86,7 +87,7 @@ if __name__ == "__main__":
 如需在中电信“天衍”量子计算云平台上执行，可将 `LocalRunner()` 替换为：
 
 ```python
-from cqlib_algorithm.execution import TianYanRunner
+from cqlib_qaoa.execution import TianYanRunner
 
 runner = TianYanRunner(login_key="YOUR_KEY", machine="tianyan_sw")
 ```
