@@ -1,5 +1,5 @@
 # Cqlib-QAOA
-See the Chinese version at [Chinese version](README.md)。
+See the Chinese version at [Chinese version](README.md).
 
 This project is a QAOA quantum algorithm package based on **[Cqlib](https://github.com/cq-lib)**, created by the development team of China Telecom Quantum Group. It includes functions such as creating new optimization tasks, generating Hamiltonians, creating quantum circuits, executing quantum circuits, measuring and sampling, and returning optimization results. 
 
