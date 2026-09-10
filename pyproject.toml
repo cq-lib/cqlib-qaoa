@@ -46,8 +46,8 @@ Documentation = "https://qc.zdxlz.com/learn/#/resource/informationSpace"
 Repository = "https://github.com/cq-lib/cqlib-qaoa"
 Issues = "https://github.com/cq-lib/cqlib-qaoa/issues"
 
-[tool.setuptools]
-packages = { find = { } }
+[tool.setuptools.packages.find]
+include = ["cqlib_qaoa*"]
 
 [build-system]
 requires = ["setuptools>=80.0", "wheel"]
